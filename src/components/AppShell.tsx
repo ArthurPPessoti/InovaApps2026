@@ -2,6 +2,7 @@ import {
   BellSimple,
   ChartLineUp,
   ListChecks,
+  PlugsConnected,
   Pulse,
   SidebarSimple,
   UsersThree,
@@ -15,9 +16,10 @@ interface AppShellProps {
 }
 
 const navItems = [
-  { label: "Visão geral", hash: "#resumo", icon: ChartLineUp },
-  { label: "Clientes", hash: "#clientes", icon: UsersThree },
-  { label: "Sinais", hash: "#sinais", icon: Pulse },
+  { label: "Visão geral", to: "/#resumo", hash: "#resumo", icon: ChartLineUp },
+  { label: "Clientes", to: "/#clientes", hash: "#clientes", icon: UsersThree },
+  { label: "Sinais", to: "/#sinais", hash: "#sinais", icon: Pulse },
+  { label: "Conexões", to: "/conexoes", icon: PlugsConnected },
 ];
 
 export function AppShell({ children }: AppShellProps) {
@@ -57,13 +59,15 @@ export function AppShell({ children }: AppShellProps) {
 
         <nav className="sidebar-nav" aria-label="Navegação principal">
           <p className="nav-label">Carteira</p>
-          {navItems.map(({ label, hash, icon: Icon }) => {
-            const isActive = location.pathname === "/" && (location.hash === hash || (!location.hash && hash === "#resumo"));
+          {navItems.map(({ label, to, hash, icon: Icon }) => {
+            const isActive = hash
+              ? location.pathname === "/" && (location.hash === hash || (!location.hash && hash === "#resumo"))
+              : location.pathname === to;
             return (
             <Link
-              key={hash}
+              key={to}
               className={isActive ? "nav-link nav-link--active" : "nav-link"}
-              to={`/${hash}`}
+              to={to}
               onClick={() => setMenuOpen(false)}
             >
               <Icon size={20} weight="duotone" />

@@ -1402,6 +1402,240 @@ input:hover {
   min-height: calc(100dvh - 180px);
 }
 
+.connections-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.connections-heading {
+  max-width: 920px;
+}
+
+.connection-overview {
+  display: grid;
+  margin-top: 34px;
+  padding: 24px 28px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  border: 1px solid rgba(0, 243, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: linear-gradient(112.61deg, rgba(4, 24, 51, 0.96), rgba(0, 0, 170, 0.5), rgba(0, 8, 61, 0.92));
+}
+
+.connection-overview > div:first-child {
+  min-width: 112px;
+  padding-right: 28px;
+  border-right: 1px solid var(--border-strong);
+}
+
+.connection-overview span,
+.connection-overview small {
+  display: block;
+  color: var(--gray-400);
+  font-size: 10px;
+}
+
+.connection-overview > div:first-child strong {
+  display: block;
+  margin: 5px 0 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 38px;
+}
+
+.connection-overview-copy strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 17px;
+}
+
+.connection-overview-copy p {
+  max-width: 660px;
+  margin: 7px 0 0;
+  color: var(--gray-400);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.connections-section {
+  margin-top: 46px;
+}
+
+.connection-section-heading h2 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 24px;
+  letter-spacing: -0.025em;
+}
+
+.connection-section-heading .eyebrow {
+  margin-bottom: 8px;
+}
+
+.connections-grid {
+  display: grid;
+  margin-top: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.connection-card {
+  min-height: 270px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(6, 29, 62, 0.88), rgba(4, 24, 51, 0.7));
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.connection-card:hover,
+.connection-card--active {
+  border-color: rgba(0, 243, 255, 0.26);
+}
+
+.connection-card:hover {
+  transform: translateY(-3px);
+}
+
+.connection-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.connection-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid rgba(0, 243, 255, 0.18);
+  border-radius: 14px;
+  color: var(--cyan-400);
+  background: rgba(0, 243, 255, 0.07);
+}
+
+.connection-status {
+  display: inline-flex;
+  min-height: 29px;
+  padding: 0 10px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--gray-500);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.connection-status--active {
+  color: var(--green-400);
+  border-color: rgba(0, 255, 145, 0.24);
+  background: rgba(0, 255, 145, 0.06);
+}
+
+.connection-card > small {
+  display: block;
+  margin-top: 22px;
+  color: var(--cyan-400);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.connection-card h3,
+.tracking-instructions h3 {
+  margin: 7px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+}
+
+.connection-card > p,
+.tracking-instructions p,
+.file-connection p {
+  margin: 9px 0 0;
+  color: var(--gray-400);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.connection-actions {
+  display: flex;
+  margin-top: 22px;
+  align-items: center;
+  gap: 14px;
+}
+
+.text-button {
+  min-height: 44px;
+  padding: 0 6px;
+  color: var(--cyan-400);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.text-button:hover {
+  color: #ffffff;
+}
+
+.tracking-instructions {
+  display: grid;
+  margin-top: 14px;
+  padding: 24px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+  align-items: center;
+  gap: 28px;
+  border: 1px solid rgba(0, 243, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(0, 243, 255, 0.035);
+}
+
+.tracking-instructions pre {
+  margin: 0;
+  padding: 18px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--cyan-400);
+  background: rgba(0, 5, 18, 0.74);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.file-connection {
+  display: grid;
+  margin-top: 18px;
+  padding: 24px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: rgba(4, 24, 51, 0.56);
+}
+
+.file-connection--active {
+  border-style: solid;
+  border-color: rgba(0, 255, 145, 0.24);
+}
+
+.connection-icon--large {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+}
+
+.file-connection strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 15px;
+}
+
+.file-button {
+  gap: 8px;
+}
+
 @media (max-width: 1280px) {
   .metrics-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1599,6 +1833,22 @@ input:hover {
   .detail-bottom-grid {
     grid-template-columns: 1fr;
   }
+
+  .connection-overview,
+  .file-connection {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .connection-overview > .demo-chip,
+  .file-button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .connections-grid,
+  .tracking-instructions {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1656,6 +1906,28 @@ input:hover {
 
   .event-item > small {
     grid-column: 2;
+  }
+
+  .connection-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .connection-overview > div:first-child {
+    padding: 0 0 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-strong);
+  }
+
+  .connection-overview > .demo-chip {
+    grid-column: 1;
+  }
+
+  .file-connection {
+    grid-template-columns: 1fr;
+  }
+
+  .file-button {
+    grid-column: 1;
   }
 }
 

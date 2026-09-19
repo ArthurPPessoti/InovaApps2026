@@ -5,3 +5,10 @@ dist/
 CLAUDE.md
 public/brand/globalsys-logo.png
 *.tsbuildinfo
+
+# Artefatos locais de validação visual
+connections-*.png
+tmp-chrome-*/
+tmp-edge-*/
+playwright-report/
+test-results/

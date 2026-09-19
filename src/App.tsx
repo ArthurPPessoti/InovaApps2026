@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { ClientDetailPage } from "./pages/ClientDetailPage";
+import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 
 export default function App() {
@@ -8,6 +9,7 @@ export default function App() {
     <AppShell>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/conexoes" element={<ConnectionsPage />} />
         <Route path="/clientes/:clienteId" element={<ClientDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
