@@ -1,4 +1,4 @@
-import type { ClientMock, PortfolioPoint } from "../types";
+import type { CompanyMock, CompanyPortfolio, PortfolioPoint, ProductContractMock, RiskLevel } from "../types";
 
 const commonActions = (focus: string) => [
   {
@@ -17,17 +17,18 @@ const commonActions = (focus: string) => [
   },
 ];
 
-export const clients: ClientMock[] = [
+export const products: ProductContractMock[] = [
   {
     id: "atlas-logistica",
-    name: "Atlas Logística",
-    segment: "Logística",
+    companyId: "atlas-logistica",
+    productName: "Sistema de Pesagem",
     plan: "Enterprise",
-    solution: "Sistema de Pesagem",
     priority: 1,
     riskLevel: "Alto",
     riskScore: 88,
-    monthlyRevenue: 32000,
+    monthlyRevenue: 18000,
+    strategicCriticality: 5,
+    activeUsers: 20,
     primarySignal: "Pesagens concluídas caíram 61%",
     explanation:
       "O acesso ao sistema permanece estável, mas a função central de pesagem perdeu volume por três meses consecutivos. Duas unidades deixaram de operar e a integração com o ERP também recuou.",
@@ -96,14 +97,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "clinica-horizonte",
-    name: "Clínica Horizonte",
-    segment: "Saúde",
+    companyId: "clinica-horizonte",
+    productName: "Suporte Dedicado",
     plan: "Avançado",
-    solution: "Suporte Dedicado",
     priority: 2,
     riskLevel: "Alto",
     riskScore: 85,
     monthlyRevenue: 24500,
+    strategicCriticality: 5,
+    activeUsers: 18,
     primarySignal: "SLA em 71% e três chamados críticos",
     explanation: "O SLA deteriorou por três meses, chamados críticos permanecem abertos e a última pesquisa foi detratora.",
     usage: 74,
@@ -126,14 +128,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "varejo-nova",
-    name: "Varejo Nova",
-    segment: "Varejo",
+    companyId: "varejo-nova",
+    productName: "Analytics",
     plan: "Avançado",
-    solution: "Analytics",
     priority: 3,
     riskLevel: "Alto",
     riskScore: 82,
     monthlyRevenue: 18500,
+    strategicCriticality: 4,
+    activeUsers: 12,
     primarySignal: "Dashboards sem acesso há 21 dias",
     explanation: "Gestores deixaram de acessar os painéis e nenhum relatório foi exportado no mês atual.",
     usage: 28,
@@ -156,14 +159,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "industria-orion",
-    name: "Indústria Orion",
-    segment: "Indústria",
+    companyId: "industria-orion",
+    productName: "Integração e DevOps",
     plan: "Enterprise",
-    solution: "Integração e DevOps",
     priority: 4,
     riskLevel: "Alto",
     riskScore: 78,
     monthlyRevenue: 42000,
+    strategicCriticality: 5,
+    activeUsers: 26,
     primarySignal: "Falhas recorrentes na integração com ERP",
     explanation: "A integração crítica acumula falhas, enquanto o uso das demais funções segue próximo do esperado.",
     usage: 77,
@@ -186,14 +190,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "educacional-delta",
-    name: "Educacional Delta",
-    segment: "Educação",
+    companyId: "educacional-delta",
+    productName: "Transformação Digital",
     plan: "Essencial",
-    solution: "Transformação Digital",
     priority: 5,
     riskLevel: "Médio",
     riskScore: 69,
     monthlyRevenue: 15000,
+    strategicCriticality: 3,
+    activeUsers: 9,
     primarySignal: "Nenhuma das três reuniões realizada",
     explanation: "A operação continua ativa, mas o contato com as áreas responsáveis caiu e as reuniões foram canceladas.",
     usage: 68,
@@ -216,14 +221,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "servicos-prisma",
-    name: "Serviços Prisma",
-    segment: "Serviços",
+    companyId: "servicos-prisma",
+    productName: "RPA",
     plan: "Enterprise",
-    solution: "RPA",
     priority: 6,
     riskLevel: "Médio",
     riskScore: 64,
     monthlyRevenue: 28500,
+    strategicCriticality: 4,
+    activeUsers: 16,
     primarySignal: "Utilização caiu 32%",
     explanation: "O volume de automações caiu, mas a taxa de sucesso e o relacionamento permanecem estáveis.",
     usage: 68,
@@ -246,14 +252,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "rotas-sul",
-    name: "Rotas Sul",
-    segment: "Logística",
+    companyId: "rotas-sul",
+    productName: "Suporte Dedicado",
     plan: "Avançado",
-    solution: "Suporte Dedicado",
     priority: 7,
     riskLevel: "Médio",
     riskScore: 61,
     monthlyRevenue: 12000,
+    strategicCriticality: 3,
+    activeUsers: 11,
     primarySignal: "NPS detrator e chamados reabertos",
     explanation: "O uso permanece estável, mas a satisfação caiu e quatro chamados precisaram ser reabertos.",
     usage: 82,
@@ -276,14 +283,15 @@ export const clients: ClientMock[] = [
   },
   {
     id: "grupo-aurora",
-    name: "Grupo Aurora",
-    segment: "Varejo",
+    companyId: "grupo-aurora",
+    productName: "Inteligência Artificial",
     plan: "Enterprise",
-    solution: "Inteligência Artificial",
     priority: 8,
     riskLevel: "Médio",
     riskScore: 57,
     monthlyRevenue: 36000,
+    strategicCriticality: 4,
+    activeUsers: 15,
     primarySignal: "Usuários ativos caíram 40%",
     explanation: "O volume total ainda é relevante, porém menos pessoas utilizam as recomendações e a taxa de aceite caiu.",
     usage: 60,
@@ -345,18 +353,48 @@ export const segmentAttention = [
   { segment: "Educação", clients: 1 },
 ];
 
-// Contas saudáveis com uma função crítica em queda: ficam fora de `clients` para não alterar a carteira em atenção.
-export const watchClients: ClientMock[] = [
+// Produtos saudáveis com uma função crítica em queda: ficam fora de `products` para não alterar a carteira em atenção.
+export const watchProducts: ProductContractMock[] = [
+  {
+    ...products[0],
+    id: "atlas-analytics",
+    productName: "Analytics Operacional",
+    plan: "Enterprise",
+    priority: 9,
+    riskLevel: "Baixo",
+    riskScore: 22,
+    monthlyRevenue: 14000,
+    strategicCriticality: 3,
+    activeUsers: 8,
+    primarySignal: "Uso analítico permanece estável",
+    explanation: "O produto de Analytics Operacional mantém adoção e qualidade estáveis. O alerta da Atlas está concentrado no contrato de pesagem.",
+    usage: 87,
+    sla: 98,
+    nps: 8,
+    openTickets: 1,
+    meetings: "2 de 2",
+    paymentDelay: 0,
+    trend: [{ label: "Jan", value: 82 }, { label: "Fev", value: 84 }, { label: "Mar", value: 85 }, { label: "Abr", value: 86 }, { label: "Mai", value: 86 }, { label: "Jun", value: 87 }],
+    usageAndSla: [{ label: "Jan", uso: 82, sla: 97 }, { label: "Fev", uso: 84, sla: 97 }, { label: "Mar", uso: 85, sla: 98 }, { label: "Abr", uso: 86, sla: 98 }, { label: "Mai", uso: 86, sla: 98 }, { label: "Jun", uso: 87, sla: 98 }],
+    signals: [],
+    features: [
+      { id: "af1", name: "Dashboards operacionais", status: "Saudável", health: 88, variation: 4, lastActivity: "Há 24 min", note: "Uso recorrente pelos gestores" },
+      { id: "af2", name: "Relatórios agendados", status: "Saudável", health: 84, variation: 1, lastActivity: "Hoje", note: "Entregas dentro do padrão" },
+    ],
+    events: [{ id: "ae1", feature: "Dashboard", action: "dashboard.visualizado", result: "Sucesso", timestamp: "Hoje, 09:18", context: "Painel operacional" }],
+    actions: commonActions("a manutenção da adoção analítica"),
+  },
   {
     id: "porto-sul",
-    name: "Porto Sul Distribuição",
-    segment: "Logística",
+    companyId: "porto-sul",
+    productName: "Plataforma de Operações",
     plan: "Avançado",
-    solution: "Plataforma de Operações",
     priority: 9,
     riskLevel: "Baixo",
     riskScore: 28,
     monthlyRevenue: 21000,
+    strategicCriticality: 5,
+    activeUsers: 31,
     primarySignal: "Integração ERP caiu 52% em 4 semanas",
     explanation: "A conta segue saudável: acesso, SLA e pagamentos estão normais. Porém a integração com o ERP, função crítica do contrato, perdeu metade do volume e parte dos pedidos voltou a ser lançada manualmente.",
     usage: 91,
@@ -379,14 +417,15 @@ export const watchClients: ClientMock[] = [
   },
   {
     id: "rede-vitta",
-    name: "Rede Vitta Farmácias",
-    segment: "Varejo",
+    companyId: "rede-vitta",
+    productName: "Inteligência Artificial",
     plan: "Enterprise",
-    solution: "Inteligência Artificial",
     priority: 10,
     riskLevel: "Baixo",
     riskScore: 24,
     monthlyRevenue: 47000,
+    strategicCriticality: 5,
+    activeUsers: 42,
     primarySignal: "Gestores deixaram de ver as previsões",
     explanation: "O uso operacional segue alto e a conta está adimplente. Porém nenhum gestor abriu o painel de previsões de demanda nas últimas três semanas, justamente o módulo que justifica o plano Enterprise.",
     usage: 88,
@@ -409,14 +448,79 @@ export const watchClients: ClientMock[] = [
   },
 ];
 
-export const allSignals = [...clients, ...watchClients].flatMap((client) =>
-  client.signals.map((signal) => ({ ...signal, client })),
+export const companies: CompanyMock[] = [
+  { id: "atlas-logistica", name: "Atlas Logística", segment: "Logística", owner: "Marina Costa", nps: 7, paymentDelay: 0, relationshipRiskScore: 25, dataSource: "mock" },
+  { id: "clinica-horizonte", name: "Clínica Horizonte", segment: "Saúde", owner: "Paulo Nunes", nps: 4, paymentDelay: 4, relationshipRiskScore: 85, dataSource: "mock" },
+  { id: "varejo-nova", name: "Varejo Nova", segment: "Varejo", owner: "Ana Lima", nps: 7, paymentDelay: 0, relationshipRiskScore: 82, dataSource: "mock" },
+  { id: "industria-orion", name: "Indústria Orion", segment: "Indústria", owner: "Caio Martins", nps: 6, paymentDelay: 0, relationshipRiskScore: 78, dataSource: "mock" },
+  { id: "educacional-delta", name: "Educacional Delta", segment: "Educação", owner: "Luiza Alves", nps: null, paymentDelay: 2, relationshipRiskScore: 69, dataSource: "mock" },
+  { id: "servicos-prisma", name: "Serviços Prisma", segment: "Serviços", owner: "Rafael Dias", nps: 8, paymentDelay: 0, relationshipRiskScore: 64, dataSource: "mock" },
+  { id: "rotas-sul", name: "Rotas Sul", segment: "Logística", owner: "Bia Rocha", nps: 3, paymentDelay: 0, relationshipRiskScore: 61, dataSource: "mock" },
+  { id: "grupo-aurora", name: "Grupo Aurora", segment: "Varejo", owner: "Ivo Ramos", nps: 7, paymentDelay: 0, relationshipRiskScore: 57, dataSource: "mock" },
+  { id: "porto-sul", name: "Porto Sul Distribuição", segment: "Logística", owner: "Nina Luz", nps: 9, paymentDelay: 0, relationshipRiskScore: 28, dataSource: "mock" },
+  { id: "rede-vitta", name: "Rede Vitta Farmácias", segment: "Varejo", owner: "Davi Reis", nps: 8, paymentDelay: 0, relationshipRiskScore: 24, dataSource: "mock" },
+  { id: "mercado-leste", name: "Mercado Leste", segment: "Varejo", owner: "Carla Melo", nps: 5, paymentDelay: 0, relationshipRiskScore: 72, dataSource: "mock" },
+  { id: "clinica-vida", name: "Clínica Vida", segment: "Saúde", owner: "João Brito", nps: 3, paymentDelay: 0, relationshipRiskScore: 81, dataSource: "mock" },
+  { id: "transportes-norte", name: "Transportes Norte", segment: "Logística", owner: "Sofia Leal", nps: 7, paymentDelay: 18, relationshipRiskScore: 74, dataSource: "mock" },
+  { id: "escola-conecta", name: "Escola Conecta", segment: "Educação", owner: "Leo Vaz", nps: null, paymentDelay: 0, relationshipRiskScore: 76, dataSource: "mock" },
+  { id: "industria-vale", name: "Indústria Vale", segment: "Indústria", owner: "Mia Freitas", nps: 4, paymentDelay: 0, relationshipRiskScore: 88, dataSource: "mock" },
+  { id: "grupo-central", name: "Grupo Central", segment: "Serviços", owner: "Theo Moura", nps: 6, paymentDelay: 0, relationshipRiskScore: 73, dataSource: "mock" },
+];
+
+export const portfolioProducts = [...products, ...watchProducts.filter((product) => product.id === "atlas-analytics")];
+export const allProducts = [...products, ...watchProducts];
+export const getCompany = (companyId: string) => companies.find((company) => company.id === companyId);
+
+const riskLevelFor = (score: number): RiskLevel => score >= 70 ? "Alto" : score >= 45 ? "Médio" : "Baixo";
+
+export function calculateCompanyPortfolio(company: CompanyMock): CompanyPortfolio {
+  const companyProducts = allProducts.filter((product) => product.companyId === company.id);
+  const monthlyRevenue = companyProducts.reduce((sum, product) => sum + product.monthlyRevenue, 0);
+  const criticalityTotal = companyProducts.reduce((sum, product) => sum + product.strategicCriticality, 0);
+  const activeUsersTotal = companyProducts.reduce((sum, product) => sum + product.activeUsers, 0);
+  const contributions = companyProducts.map((product) => {
+    const weight = 0.5 * (product.monthlyRevenue / monthlyRevenue)
+      + 0.3 * (product.strategicCriticality / criticalityTotal)
+      + 0.2 * (product.activeUsers / activeUsersTotal);
+    return { product, weight, contribution: product.riskScore * weight };
+  });
+  const productRiskScore = contributions.reduce((sum, item) => sum + item.contribution, 0);
+  const calculatedScore = Math.round(productRiskScore * 0.7 + company.relationshipRiskScore * 0.3);
+  const criticalAlert = companyProducts.find((product) => product.riskScore >= 75
+    && (product.monthlyRevenue / monthlyRevenue >= 0.3 || product.strategicCriticality >= 4));
+  const riskScore = criticalAlert && calculatedScore < 45 ? 45 : calculatedScore;
+  return {
+    company,
+    products: companyProducts,
+    monthlyRevenue,
+    productRiskScore,
+    riskScore,
+    riskLevel: riskLevelFor(riskScore),
+    productsAtRisk: companyProducts.filter((product) => product.riskLevel !== "Baixo").length,
+    criticalAlert,
+    contributions,
+  };
+}
+
+export const companyPortfolios = companies.filter((company) => allProducts.some((product) => product.companyId === company.id)).map(calculateCompanyPortfolio);
+export const attentionCompanies = companyPortfolios.filter((portfolio) => portfolio.products.some((product) => products.includes(product)));
+
+export const allSignals = allProducts.flatMap((product) =>
+  product.signals.map((signal) => ({ ...signal, product })),
 );
 
-export const portfolioSummary = {
-  activeClients: 58,
-  attentionClients: clients.length,
-  highRiskClients: clients.filter((client) => client.riskLevel === "Alto").length,
-  revenueAtAttention: clients.reduce((sum, client) => sum + client.monthlyRevenue, 0),
+export const productPortfolioSummary = {
+  activeProducts: 76,
+  attentionProducts: products.length,
+  highRiskProducts: products.filter((product) => product.riskLevel === "Alto").length,
+  revenueAtAttention: products.reduce((sum, product) => sum + product.monthlyRevenue, 0),
+  dataSource: "mock" as const,
+};
+
+export const companyPortfolioSummary = {
+  activeCompanies: 58,
+  attentionCompanies: attentionCompanies.length,
+  highRiskCompanies: attentionCompanies.filter((portfolio) => portfolio.riskLevel === "Alto").length,
+  affectedCompanyRevenue: attentionCompanies.reduce((sum, portfolio) => sum + portfolio.monthlyRevenue, 0),
   dataSource: "mock" as const,
 };

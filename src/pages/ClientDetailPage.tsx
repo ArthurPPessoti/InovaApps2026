@@ -23,7 +23,7 @@ import {
   YAxis,
 } from "recharts";
 import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
-import { clients, watchClients } from "../data/mockData";
+import { getCompany, products, watchProducts } from "../data/mockData";
 
 function DetailTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -38,7 +38,7 @@ function DetailTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function ClientDetailPage() {
   const { clienteId } = useParams();
   const location = useLocation();
-  const client = [...clients, ...watchClients].find((item) => item.id === clienteId);
+  const client = [...products, ...watchProducts].find((item) => item.id === clienteId);
   const backTarget = (location.state as { from?: string } | null)?.from ?? "/#clientes";
 
   if (!client) {
@@ -51,6 +51,7 @@ export function ClientDetailPage() {
       </section>
     );
   }
+  const company = getCompany(client.companyId)!;
 
   const metricCards = [
     { label: "Uso atual", value: `${client.usage}%`, helper: "do padrão histórico", icon: Gauge },
@@ -70,8 +71,8 @@ export function ClientDetailPage() {
           <span className="eyebrow"><Pulse size={16} weight="fill" /> Visão individual</span>
           <div className="client-title-row">
             <div>
-              <h1>{client.name}</h1>
-              <p>{client.segment} · {client.plan} · {client.solution}</p>
+              <h1>{client.productName}</h1>
+              <p><Link to={`/empresas/${company.id}`}>{company.name}</Link> · {company.segment} · {client.plan}</p>
             </div>
             <RiskBadge level={client.riskLevel} score={client.riskScore} />
           </div>
@@ -86,7 +87,7 @@ export function ClientDetailPage() {
       <section className="explanation-panel">
         <div className="explanation-icon"><Lightbulb size={25} weight="duotone" /></div>
         <div>
-          <span>Por que este cliente exige atenção?</span>
+          <span>Por que este produto exige atenção?</span>
           <h2>{client.primarySignal}</h2>
           <p>{client.explanation}</p>
         </div>
@@ -186,7 +187,7 @@ export function ClientDetailPage() {
       </section>
 
       <footer className="mock-footer">
-        <UsersThree size={18} /> Dados demonstrativos. Nenhuma classificação representa uma previsão real.
+        <UsersThree size={18} /> Produto de {company.name}. Dados demonstrativos; nenhuma classificação representa uma previsão real.
       </footer>
     </div>
   );

@@ -11,9 +11,9 @@ import {
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
-import { allSignals, clients, watchClients } from "../data/mockData";
+import { allProducts, allSignals, getCompany, watchProducts } from "../data/mockData";
 import { cancelledClients } from "../retention/RetentionContext";
-import type { CancellationReason, ClientMock, SignalDimension } from "../types";
+import type { CancellationReason, ProductContractMock, SignalDimension } from "../types";
 import { ChartTooltip } from "./DashboardPage";
 
 const reasonDimension: Record<CancellationReason, SignalDimension> = {
@@ -26,23 +26,22 @@ const reasonDimension: Record<CancellationReason, SignalDimension> = {
 };
 
 const dimensions: SignalDimension[] = ["Uso", "Integração", "Atendimento", "Relacionamento", "Financeiro"];
-const allClients = [...clients, ...watchClients];
-const signalClients = [...new Map(allSignals.map(({ client }) => [client.id, client])).values()];
-const revenueWithSignals = signalClients.reduce((sum, client) => sum + client.monthlyRevenue, 0);
+const signalProducts = [...new Map(allSignals.map(({ product }) => [product.id, product])).values()];
+const revenueWithSignals = signalProducts.reduce((sum, product) => sum + product.monthlyRevenue, 0);
 const highSignals = allSignals.filter((signal) => signal.severity === "Alto").length;
-const criticalFeatures = allClients.flatMap((client) => client.features.filter((feature) => feature.status === "Crítico").map((feature) => ({ feature, client })));
+const criticalFeatures = allProducts.flatMap((product) => product.features.filter((feature) => feature.status === "Crítico").map((feature) => ({ feature, product })));
 const averageLeadTime = Math.round(cancelledClients.reduce((sum, client) => sum + client.firstSignalDays, 0) / cancelledClients.length);
 
-const clientsByDimension = (dimension: SignalDimension) =>
-  signalClients.filter((client) => client.signals.some((signal) => signal.dimension === dimension));
+const productsByDimension = (dimension: SignalDimension) =>
+  signalProducts.filter((product) => product.signals.some((signal) => signal.dimension === dimension));
 
 const revenueByDimension = dimensions
-  .map((dimension) => ({ dimension, receita: Math.round(clientsByDimension(dimension).reduce((sum, client) => sum + client.monthlyRevenue, 0) / 1000) }))
+  .map((dimension) => ({ dimension, receita: Math.round(productsByDimension(dimension).reduce((sum, product) => sum + product.monthlyRevenue, 0) / 1000) }))
   .filter((item) => item.receita > 0)
   .sort((a, b) => b.receita - a.receita);
 
-const steepestDrops = allClients
-  .flatMap((client) => client.features.filter((feature) => feature.variation <= -30).map((feature) => ({ feature, client })))
+const steepestDrops = allProducts
+  .flatMap((product) => product.features.filter((feature) => feature.variation <= -30).map((feature) => ({ feature, product })))
   .sort((a, b) => a.feature.variation - b.feature.variation)
   .slice(0, 6);
 
@@ -89,13 +88,13 @@ export function SignalsPage() {
           <div className="metric-icon"><CurrencyCircleDollar size={22} weight="duotone" /></div>
           <span>Receita ligada aos sinais</span>
           <strong>{formatCurrency(revenueWithSignals)}</strong>
-          <small>Mensal · {signalClients.length} clientes</small>
+          <small>Mensal · {signalProducts.length} produtos</small>
         </article>
         <article className="metric-card">
           <div className="metric-icon metric-icon--danger"><TrendDown size={22} weight="duotone" /></div>
           <span>Funções críticas em queda</span>
           <strong>{criticalFeatures.length}</strong>
-          <small>Em {new Set(criticalFeatures.map(({ client }) => client.id)).size} clientes</small>
+          <small>Em {new Set(criticalFeatures.map(({ product }) => product.id)).size} produtos</small>
         </article>
         <article className="metric-card">
           <div className="metric-icon"><ClockCountdown size={22} weight="duotone" /></div>
@@ -114,7 +113,7 @@ export function SignalsPage() {
           </div>
         </div>
         <div className="silent-grid">
-          {watchClients.map((client) => <SilentRiskCard key={client.id} client={client} onOpen={openClient} />)}
+          {watchProducts.map((product) => <SilentRiskCard key={product.id} product={product} onOpen={openClient} />)}
         </div>
       </section>
 
@@ -141,10 +140,10 @@ export function SignalsPage() {
             <div><span>Funcionalidades</span><h2>Maiores quedas de uso</h2></div>
           </div>
           <ul className="drop-list">
-            {steepestDrops.map(({ feature, client }) => (
-              <li key={`${client.id}-${feature.id}`}>
-                <button type="button" onClick={() => openClient(client.id)}>
-                  <span><strong>{feature.name}</strong><small>{client.name}</small></span>
+            {steepestDrops.map(({ feature, product }) => (
+              <li key={`${product.id}-${feature.id}`}>
+                <button type="button" onClick={() => openClient(product.id)}>
+                  <span><strong>{feature.name}</strong><small>{product.productName} · {getCompany(product.companyId)?.name}</small></span>
                   <Variation value={feature.variation} />
                 </button>
               </li>
@@ -161,20 +160,21 @@ export function SignalsPage() {
         <div className="precedent-grid">
           {cancelledClients.map((cancelled) => {
             const precedentDimension = reasonDimension[cancelled.reason];
-            const matches = clientsByDimension(precedentDimension);
+            const matches = productsByDimension(precedentDimension);
             return (
               <article key={cancelled.id} className="precedent-card">
                 <div className="precedent-card__head">
                   <span className="dimension-tag">{precedentDimension}</span>
                   <small>{cancelled.firstSignalDays} dias de antecedência</small>
                 </div>
-                <strong>{cancelled.name}</strong>
+                <strong>{cancelled.productName}</strong>
+                <small>{getCompany(cancelled.companyId)?.name ?? cancelled.companyId}</small>
                 <p>Saiu por <em>{cancelled.reason.toLowerCase()}</em>. Tracking antes da saída: {cancelled.technologySignals[0]}.</p>
                 <div className="precedent-card__matches">
                   {matches.length ? (
                     <>
                       <small><WarningDiamond size={14} weight="fill" /> {matches.length} {matches.length === 1 ? "ativo com sinal parecido" : "ativos com sinais parecidos"}</small>
-                      <div>{matches.map((client) => <button key={client.id} type="button" className="client-chip" onClick={() => openClient(client.id)}>{client.name}</button>)}</div>
+                      <div>{matches.map((product) => <button key={product.id} type="button" className="client-chip" onClick={() => openClient(product.id)}>{product.productName}</button>)}</div>
                     </>
                   ) : (
                     <small className="precedent-card__clear">Nenhum ativo com esse sinal hoje</small>
@@ -213,15 +213,15 @@ export function SignalsPage() {
         {filteredSignals.length ? (
           <div className="signal-feed-grid signal-feed-grid--panel">
             {filteredSignals.map((signal) => (
-              <button key={signal.id} className="signal-feed-card" type="button" onClick={() => openClient(signal.client.id)}>
+              <button key={signal.id} className="signal-feed-card" type="button" onClick={() => openClient(signal.product.id)}>
                 <span className="signal-feed-card__tags">
                   <span className={`signal-severity signal-severity--${severityClass(signal.severity)}`}><Pulse size={16} weight="fill" /> {signal.severity}</span>
                   <span className="dimension-tag">{signal.dimension}</span>
-                  {signal.client.riskLevel === "Baixo" && <span className="dimension-tag dimension-tag--silent">Silencioso</span>}
+                  {signal.product.riskLevel === "Baixo" && <span className="dimension-tag dimension-tag--silent">Silencioso</span>}
                 </span>
                 <strong>{signal.title}</strong>
                 <p>{signal.detail}</p>
-                <span className="signal-feed-card__client">{signal.client.name} · {formatCurrency(signal.client.monthlyRevenue)}/mês</span>
+                <span className="signal-feed-card__client">{signal.product.productName} · {getCompany(signal.product.companyId)?.name} · {formatCurrency(signal.product.monthlyRevenue)}/mês</span>
                 <small>{signal.feature} · {signal.timestamp}</small>
               </button>
             ))}
@@ -239,13 +239,14 @@ export function SignalsPage() {
   );
 }
 
-function SilentRiskCard({ client, onOpen }: { client: ClientMock; onOpen: (clientId: string) => void }) {
-  const critical = client.features.find((feature) => feature.status === "Crítico");
+function SilentRiskCard({ product, onOpen }: { product: ProductContractMock; onOpen: (clientId: string) => void }) {
+  const critical = product.features.find((feature) => feature.status === "Crítico");
+  const company = getCompany(product.companyId)!;
   return (
     <article className="silent-card">
       <div className="silent-card__head">
-        <div><strong>{client.name}</strong><small>{client.segment} · {client.solution}</small></div>
-        <RiskBadge level={client.riskLevel} score={client.riskScore} />
+        <div><strong>{product.productName}</strong><small>{company.name} · {company.segment}</small></div>
+        <RiskBadge level={product.riskLevel} score={product.riskScore} />
       </div>
       {critical && (
         <div className="silent-card__drop">
@@ -253,10 +254,10 @@ function SilentRiskCard({ client, onOpen }: { client: ClientMock; onOpen: (clien
           <Variation value={critical.variation} />
         </div>
       )}
-      <p>{client.explanation}</p>
+      <p>{product.explanation}</p>
       <div className="silent-card__foot">
-        <span>{formatCurrency(client.monthlyRevenue)}<small>/mês em jogo</small></span>
-        <button type="button" className="table-action" onClick={() => onOpen(client.id)}>Ver cliente <ArrowRight size={16} /></button>
+        <span>{formatCurrency(product.monthlyRevenue)}<small>/mês em jogo</small></span>
+        <button type="button" className="table-action" onClick={() => onOpen(product.id)}>Ver produto <ArrowRight size={16} /></button>
       </div>
     </article>
   );

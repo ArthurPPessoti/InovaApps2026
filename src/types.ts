@@ -23,7 +23,7 @@ export interface RewardConfig {
 }
 
 export interface SurveyCampaign {
-  clientId: string;
+  productId: string;
   status: SurveyStatus;
   subject: string;
   message: string;
@@ -42,12 +42,11 @@ export interface SurveyResponse {
   answeredAt: string;
 }
 
-export interface CancelledClientMock {
+export interface CancelledProductMock {
   id: string;
-  name: string;
-  segment: string;
+  companyId: string;
+  productName: string;
   plan: string;
-  solution: string;
   cancelledAt: string;
   cancellationMonth: string;
   monthlyRevenueLost: number;
@@ -121,16 +120,28 @@ export interface SuggestedAction {
   urgency: "Hoje" | "Esta semana" | "Monitorar";
 }
 
-export interface ClientMock {
+export interface CompanyMock {
   id: string;
   name: string;
   segment: string;
+  owner: string;
+  nps: number | null;
+  paymentDelay: number;
+  relationshipRiskScore: number;
+  dataSource: DataSource;
+}
+
+export interface ProductContractMock {
+  id: string;
+  companyId: string;
+  productName: string;
   plan: string;
-  solution: string;
   priority: number;
   riskLevel: RiskLevel;
   riskScore: number;
   monthlyRevenue: number;
+  strategicCriticality: 1 | 2 | 3 | 4 | 5;
+  activeUsers: number;
   primarySignal: string;
   explanation: string;
   usage: number;
@@ -146,6 +157,24 @@ export interface ClientMock {
   events: TrackingEvent[];
   actions: SuggestedAction[];
   dataSource: DataSource;
+}
+
+export interface CompanyProductContribution {
+  product: ProductContractMock;
+  weight: number;
+  contribution: number;
+}
+
+export interface CompanyPortfolio {
+  company: CompanyMock;
+  products: ProductContractMock[];
+  monthlyRevenue: number;
+  productRiskScore: number;
+  riskScore: number;
+  riskLevel: RiskLevel;
+  productsAtRisk: number;
+  criticalAlert?: ProductContractMock;
+  contributions: CompanyProductContribution[];
 }
 
 export interface PortfolioPoint {

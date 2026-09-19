@@ -1,12 +1,13 @@
 import {
   ArrowRight,
+  Buildings,
   CurrencyCircleDollar,
   Funnel,
   MagnifyingGlass,
   Pulse,
   ShieldWarning,
   TrendDown,
-  UsersThree,
+  Package,
 } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -24,7 +25,8 @@ import {
   YAxis,
 } from "recharts";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
-import { clients, portfolioSeries, portfolioSummary, segmentAttention } from "../data/mockData";
+import { PredictiveInsights } from "../components/PredictiveInsights";
+import { attentionCompanies, companyPortfolioSummary, getCompany, portfolioProducts, portfolioSeries, productPortfolioSummary, segmentAttention } from "../data/mockData";
 
 const periodOptions = [
   { value: "3", label: "3 meses" },
@@ -53,9 +55,10 @@ export function DashboardPage() {
   const location = useLocation();
 
   const search = searchParams.get("busca") ?? "";
+  const view = searchParams.get("visao") === "empresas" ? "empresas" : "produtos";
   const risk = searchParams.get("risco") ?? "Todos";
   const segment = searchParams.get("segmento") ?? "Todos";
-  const solution = searchParams.get("solucao") ?? "Todas";
+  const solution = searchParams.get("produto") ?? "Todos";
   const period = (searchParams.get("periodo") ?? "6") as "3" | "6" | "12";
 
   const setFilter = (key: string, value: string, defaultValue: string) => {
@@ -65,22 +68,36 @@ export function DashboardPage() {
     setSearchParams(next, { replace: true });
   };
 
-  const filteredClients = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase("pt-BR");
-    return clients.filter((client) => {
-      const matchesSearch = !normalized || client.name.toLocaleLowerCase("pt-BR").includes(normalized);
-      const matchesRisk = risk === "Todos" || client.riskLevel === risk;
-      const matchesSegment = segment === "Todos" || client.segment === segment;
-      const matchesSolution = solution === "Todas" || client.solution === solution;
+    return portfolioProducts.filter((product) => {
+      const company = getCompany(product.companyId)!;
+      const matchesSearch = !normalized || `${product.productName} ${company.name}`.toLocaleLowerCase("pt-BR").includes(normalized);
+      const matchesRisk = risk === "Todos" || product.riskLevel === risk;
+      const matchesSegment = segment === "Todos" || company.segment === segment;
+      const matchesSolution = solution === "Todos" || product.productName === solution;
       return matchesSearch && matchesRisk && matchesSegment && matchesSolution;
     });
   }, [risk, search, segment, solution]);
 
-  const segments = [...new Set(clients.map((client) => client.segment))];
-  const solutions = [...new Set(clients.map((client) => client.solution))];
-  const openClient = (clientId: string) => {
-    navigate(`/clientes/${clientId}`, { state: { from: `${location.pathname}${location.search}` } });
+  const filteredCompanies = useMemo(() => {
+    const normalized = search.trim().toLocaleLowerCase("pt-BR");
+    return attentionCompanies.filter(({ company, riskLevel, products: companyProducts }) =>
+      (!normalized || `${company.name} ${companyProducts.map((product) => product.productName).join(" ")}`.toLocaleLowerCase("pt-BR").includes(normalized))
+      && (risk === "Todos" || riskLevel === risk)
+      && (segment === "Todos" || company.segment === segment)
+      && (solution === "Todos" || companyProducts.some((product) => product.productName === solution)),
+    );
+  }, [risk, search, segment, solution]);
+
+  const segments = [...new Set(attentionCompanies.map(({ company }) => company.segment))];
+  const solutions = [...new Set(portfolioProducts.map((product) => product.productName))];
+  const openProduct = (productId: string) => {
+    navigate(`/clientes/${productId}`, { state: { from: `${location.pathname}${location.search}` } });
   };
+  const openCompany = (companyId: string) => navigate(`/empresas/${companyId}`, { state: { from: `${location.pathname}${location.search}` } });
+  const visibleCount = view === "produtos" ? filteredProducts.length : filteredCompanies.length;
+  const totalCount = view === "produtos" ? portfolioProducts.length : attentionCompanies.length;
 
   return (
     <div className="dashboard-page">
@@ -90,38 +107,39 @@ export function DashboardPage() {
           <h1>Quem precisa da minha atenção hoje?</h1>
           <p>Sinais de comportamento, atendimento e relacionamento reunidos em uma ordem clara de ação.</p>
         </div>
-        <label className="period-control">
-          <span>Período analisado</span>
-          <select value={period} onChange={(event) => setFilter("periodo", event.target.value, "6")}>
-            {periodOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
+        <div className="heading-controls">
+          <div className="view-toggle" role="group" aria-label="Agrupar carteira">
+            <button type="button" className={view === "produtos" ? "active" : ""} onClick={() => setFilter("visao", "produtos", "produtos")}>Por produto</button>
+            <button type="button" className={view === "empresas" ? "active" : ""} onClick={() => setFilter("visao", "empresas", "produtos")}>Por empresa</button>
+          </div>
+          <label className="period-control"><span>Período analisado</span><select value={period} onChange={(event) => setFilter("periodo", event.target.value, "6")}>{periodOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+        </div>
       </section>
 
       <section className="metrics-grid" aria-label="Resumo da carteira">
         <article className="metric-card metric-card--primary">
-          <div className="metric-icon"><UsersThree size={22} weight="duotone" /></div>
-          <span>Clientes ativos</span>
-          <strong>{portfolioSummary.activeClients}</strong>
+          <div className="metric-icon">{view === "produtos" ? <Package size={22} weight="duotone" /> : <Buildings size={22} weight="duotone" />}</div>
+          <span>{view === "produtos" ? "Produtos ativos" : "Empresas ativas"}</span>
+          <strong>{view === "produtos" ? productPortfolioSummary.activeProducts : companyPortfolioSummary.activeCompanies}</strong>
           <small>Carteira monitorada</small>
         </article>
         <article className="metric-card">
           <div className="metric-icon"><TrendDown size={22} weight="duotone" /></div>
           <span>Exigem atenção</span>
-          <strong>{portfolioSummary.attentionClients}</strong>
+          <strong>{view === "produtos" ? productPortfolioSummary.attentionProducts : companyPortfolioSummary.attentionCompanies}</strong>
           <small>13,8% da carteira</small>
         </article>
         <article className="metric-card">
           <div className="metric-icon metric-icon--danger"><ShieldWarning size={22} weight="duotone" /></div>
           <span>Risco alto</span>
-          <strong>{portfolioSummary.highRiskClients}</strong>
+          <strong>{view === "produtos" ? productPortfolioSummary.highRiskProducts : companyPortfolioSummary.highRiskCompanies}</strong>
           <small>Ação recomendada hoje</small>
         </article>
         <article className="metric-card">
           <div className="metric-icon"><CurrencyCircleDollar size={22} weight="duotone" /></div>
           <span>Receita em atenção</span>
-          <strong>R$ 208,5 mil</strong>
-          <small>Valor mensal recorrente</small>
+          <strong>{formatCurrency(view === "produtos" ? productPortfolioSummary.revenueAtAttention : companyPortfolioSummary.affectedCompanyRevenue)}</strong>
+          <small>{view === "produtos" ? "Contratos diretamente expostos" : "Todos os contratos das contas afetadas"}</small>
         </article>
       </section>
 
@@ -175,18 +193,20 @@ export function DashboardPage() {
         </article>
       </section>
 
+      <PredictiveInsights profile="technology" />
+
       <section id="clientes" className="panel clients-panel">
         <div className="panel-heading panel-heading--clients">
           <div>
             <span>Ordem de ação</span>
-            <h2>Clientes que exigem atenção</h2>
-            <p>{filteredClients.length} de {clients.length} clientes na seleção atual</p>
+            <h2>{view === "produtos" ? "Produtos monitorados" : "Empresas que exigem atenção"}</h2>
+            <p>{visibleCount} de {totalCount} {view} na seleção atual</p>
           </div>
           <div className="filters" aria-label="Filtros de clientes">
             <label className="search-control">
               <MagnifyingGlass size={18} aria-hidden="true" />
-              <span className="sr-only">Buscar cliente</span>
-              <input value={search} onChange={(event) => setFilter("busca", event.target.value, "")} placeholder="Buscar cliente" />
+              <span className="sr-only">Buscar produto ou empresa</span>
+              <input value={search} onChange={(event) => setFilter("busca", event.target.value, "")} placeholder="Buscar produto ou empresa" />
             </label>
             <label className="select-control">
               <Funnel size={16} aria-hidden="true" />
@@ -202,42 +222,52 @@ export function DashboardPage() {
               </select>
             </label>
             <label className="select-control select-control--solution">
-              <span className="sr-only">Filtrar por solução</span>
-              <select value={solution} onChange={(event) => setFilter("solucao", event.target.value, "Todas")}>
-                <option>Todas</option>{solutions.map((item) => <option key={item}>{item}</option>)}
+              <span className="sr-only">Filtrar por produto</span>
+              <select value={solution} onChange={(event) => setFilter("produto", event.target.value, "Todos")}>
+                <option>Todos</option>{solutions.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
           </div>
         </div>
 
-        {filteredClients.length ? (
+        {visibleCount ? (
           <div className="table-scroll">
             <table className="clients-table">
-              <thead><tr><th>Prioridade</th><th>Cliente</th><th>Risco</th><th>Valor mensal</th><th>Solução</th><th>Principal sinal</th><th>Tendência</th><th><span className="sr-only">Ação</span></th></tr></thead>
+              <thead><tr><th>Prioridade</th><th>{view === "produtos" ? "Produto / empresa" : "Empresa"}</th><th>Risco</th><th>Valor mensal</th><th>{view === "produtos" ? "Plano" : "Produtos"}</th><th>Principal alerta</th><th>{view === "produtos" ? "Tendência" : "Composição"}</th><th><span className="sr-only">Ação</span></th></tr></thead>
               <tbody>
-                {filteredClients.map((client) => (
-                  <tr key={client.id} tabIndex={0} onClick={() => openClient(client.id)} onKeyDown={(event) => { if (event.key === "Enter") openClient(client.id); }}>
-                    <td><span className="priority-number">{String(client.priority).padStart(2, "0")}</span></td>
-                    <td><strong>{client.name}</strong><small>{client.segment}</small></td>
-                    <td><RiskBadge level={client.riskLevel} score={client.riskScore} /></td>
-                    <td className="revenue-cell">{formatCurrency(client.monthlyRevenue)}</td>
-                    <td><span className="solution-label">{client.solution}</span></td>
-                    <td className="signal-cell">{client.primarySignal}</td>
+                {view === "produtos" ? filteredProducts.map((product) => {
+                  const company = getCompany(product.companyId)!;
+                  return <tr key={product.id} tabIndex={0} onClick={() => openProduct(product.id)} onKeyDown={(event) => { if (event.key === "Enter") openProduct(product.id); }}>
+                    <td><span className="priority-number">{String(product.priority).padStart(2, "0")}</span></td>
+                    <td><strong>{product.productName}</strong><small>{company.name} · {company.segment}</small></td>
+                    <td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td>
+                    <td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td>
+                    <td><span className="solution-label">{product.plan}</span></td>
+                    <td className="signal-cell">{product.primarySignal}</td>
                     <td>
-                      <div className="sparkline" aria-label={`Tendência de ${client.name}`}>
-                        <ResponsiveContainer width="100%" height="100%"><LineChart data={client.trend}><Line isAnimationActive={false} type="monotone" dataKey="value" stroke={client.riskLevel === "Alto" ? "#ff6b78" : "#ffba49"} strokeWidth={2} dot={false} /></LineChart></ResponsiveContainer>
+                      <div className="sparkline" aria-label={`Tendência de ${product.productName}`}>
+                        <ResponsiveContainer width="100%" height="100%"><LineChart data={product.trend}><Line isAnimationActive={false} type="monotone" dataKey="value" stroke={product.riskLevel === "Alto" ? "#ff6b78" : "#ffba49"} strokeWidth={2} dot={false} /></LineChart></ResponsiveContainer>
                       </div>
                     </td>
-                    <td><button className="table-action" type="button" onClick={(event) => { event.stopPropagation(); openClient(client.id); }}>Ver cliente <ArrowRight size={16} /></button></td>
-                  </tr>
-                ))}
+                    <td><button className="table-action" type="button" onClick={(event) => { event.stopPropagation(); openProduct(product.id); }}>Ver produto <ArrowRight size={16} /></button></td>
+                  </tr>;
+                }) : filteredCompanies.map((portfolio, index) => <tr key={portfolio.company.id} tabIndex={0} onClick={() => openCompany(portfolio.company.id)} onKeyDown={(event) => { if (event.key === "Enter") openCompany(portfolio.company.id); }}>
+                  <td><span className="priority-number">{String(index + 1).padStart(2, "0")}</span></td>
+                  <td><strong>{portfolio.company.name}</strong><small>{portfolio.company.segment} · {portfolio.company.owner}</small></td>
+                  <td><RiskBadge level={portfolio.riskLevel} score={portfolio.riskScore} /></td>
+                  <td className="revenue-cell">{formatCurrency(portfolio.monthlyRevenue)}</td>
+                  <td><span className="solution-label">{portfolio.products.length} {portfolio.products.length === 1 ? "produto" : "produtos"}</span></td>
+                  <td className="signal-cell">{portfolio.criticalAlert ? `${portfolio.criticalAlert.productName}: ${portfolio.criticalAlert.primarySignal}` : portfolio.products[0]?.primarySignal}</td>
+                  <td><strong>{portfolio.productsAtRisk}</strong><small> em risco</small></td>
+                  <td><button className="table-action" type="button" onClick={(event) => { event.stopPropagation(); openCompany(portfolio.company.id); }}>Ver empresa <ArrowRight size={16} /></button></td>
+                </tr>)}
               </tbody>
             </table>
           </div>
         ) : (
           <div className="empty-state">
             <MagnifyingGlass size={30} weight="duotone" />
-            <h3>Nenhum cliente encontrado</h3>
+            <h3>Nenhum resultado encontrado</h3>
             <p>Ajuste a busca ou remova um dos filtros aplicados.</p>
             <button type="button" className="secondary-button" onClick={() => setSearchParams({})}>Limpar filtros</button>
           </div>

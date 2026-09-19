@@ -30,10 +30,12 @@ import {
 } from "recharts";
 import { isSupportedSpreadsheet, useAuth } from "../auth/AuthContext";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
-import { clients, portfolioSeries, portfolioSummary, segmentAttention } from "../data/mockData";
+import { PredictiveInsights } from "../components/PredictiveInsights";
+import { attentionCompanies, companyPortfolioSummary, getCompany, portfolioProducts, portfolioSeries, productPortfolioSummary, segmentAttention } from "../data/mockData";
 
 const generalPrimaryEvidence: Record<string, string> = {
   "atlas-logistica": "Volume operacional caiu 61% no período",
+  "atlas-analytics": "Indicadores analíticos permanecem estáveis no período",
   "clinica-horizonte": "SLA em 71% e três ocorrências críticas",
   "varejo-nova": "Sem atividade registrada há 21 dias",
   "industria-orion": "46 ocorrências operacionais em sete dias",
@@ -72,10 +74,16 @@ export function GeneralDashboardPage() {
   const location = useLocation();
 
   const search = searchParams.get("busca") ?? "";
+  const view = searchParams.get("visao") === "empresas" ? "empresas" : "produtos";
   const risk = searchParams.get("risco") ?? "Todos";
-  const filteredClients = useMemo(() => clients.filter((client) => {
+  const filteredProducts = useMemo(() => portfolioProducts.filter((product) => {
     const normalized = search.trim().toLocaleLowerCase("pt-BR");
-    return (!normalized || client.name.toLocaleLowerCase("pt-BR").includes(normalized)) && (risk === "Todos" || client.riskLevel === risk);
+    const company = getCompany(product.companyId)!;
+    return (!normalized || `${product.productName} ${company.name}`.toLocaleLowerCase("pt-BR").includes(normalized)) && (risk === "Todos" || product.riskLevel === risk);
+  }), [risk, search]);
+  const filteredCompanies = useMemo(() => attentionCompanies.filter((portfolio) => {
+    const normalized = search.trim().toLocaleLowerCase("pt-BR");
+    return (!normalized || `${portfolio.company.name} ${portfolio.products.map((product) => product.productName).join(" ")}`.toLocaleLowerCase("pt-BR").includes(normalized)) && (risk === "Todos" || portfolio.riskLevel === risk);
   }), [risk, search]);
 
   if (!account?.spreadsheet) return <SpreadsheetEmptyState />;
@@ -88,6 +96,8 @@ export function GeneralDashboardPage() {
   };
 
   const openClient = (clientId: string) => navigate(`/clientes/${clientId}`, { state: { from: `${location.pathname}${location.search}` } });
+  const openCompany = (companyId: string) => navigate(`/empresas/${companyId}`, { state: { from: `${location.pathname}${location.search}` } });
+  const visibleCount = view === "produtos" ? filteredProducts.length : filteredCompanies.length;
 
   return (
     <div className="dashboard-page general-dashboard-page">
@@ -97,14 +107,14 @@ export function GeneralDashboardPage() {
           <h1>Quais clientes merecem atenção nesta base?</h1>
           <p>Os sinais abaixo são demonstrativos e representam como as colunas confirmadas poderiam orientar a priorização.</p>
         </div>
-        <Link className="source-file-chip" to="/dados"><FileXls size={18} /><span><strong>{account.spreadsheet.fileName}</strong><small>{account.spreadsheet.rows} registros</small></span></Link>
+        <div className="heading-controls"><div className="view-toggle" role="group" aria-label="Agrupar análise"><button type="button" className={view === "produtos" ? "active" : ""} onClick={() => setFilter("visao", "produtos", "produtos")}>Por produto</button><button type="button" className={view === "empresas" ? "active" : ""} onClick={() => setFilter("visao", "empresas", "produtos")}>Por empresa</button></div><Link className="source-file-chip" to="/dados"><FileXls size={18} /><span><strong>{account.spreadsheet.fileName}</strong><small>{account.spreadsheet.rows} registros</small></span></Link></div>
       </section>
 
       <section className="metrics-grid" aria-label="Resumo da análise">
-        <article className="metric-card metric-card--primary"><div className="metric-icon"><UsersThree size={22} weight="duotone" /></div><span>Clientes analisados</span><strong>{account.spreadsheet.rows}</strong><small>Linhas válidas da base</small></article>
-        <article className="metric-card"><div className="metric-icon"><TrendDown size={22} weight="duotone" /></div><span>Exigem atenção</span><strong>{portfolioSummary.attentionClients}</strong><small>Sinais demonstrativos</small></article>
-        <article className="metric-card"><div className="metric-icon metric-icon--danger"><ShieldWarning size={22} weight="duotone" /></div><span>Risco alto</span><strong>{portfolioSummary.highRiskClients}</strong><small>Revisão recomendada</small></article>
-        <article className="metric-card"><div className="metric-icon"><CurrencyCircleDollar size={22} weight="duotone" /></div><span>Receita exposta</span><strong>R$ 208,5 mil</strong><small>Simulação mensal</small></article>
+        <article className="metric-card metric-card--primary"><div className="metric-icon"><UsersThree size={22} weight="duotone" /></div><span>{view === "produtos" ? "Produtos analisados" : "Empresas analisadas"}</span><strong>{view === "produtos" ? productPortfolioSummary.activeProducts : companyPortfolioSummary.activeCompanies}</strong><small>{account.spreadsheet.rows} linhas válidas na base</small></article>
+        <article className="metric-card"><div className="metric-icon"><TrendDown size={22} weight="duotone" /></div><span>Exigem atenção</span><strong>{view === "produtos" ? productPortfolioSummary.attentionProducts : companyPortfolioSummary.attentionCompanies}</strong><small>Sinais demonstrativos</small></article>
+        <article className="metric-card"><div className="metric-icon metric-icon--danger"><ShieldWarning size={22} weight="duotone" /></div><span>Risco alto</span><strong>{view === "produtos" ? productPortfolioSummary.highRiskProducts : companyPortfolioSummary.highRiskCompanies}</strong><small>Revisão recomendada</small></article>
+        <article className="metric-card"><div className="metric-icon"><CurrencyCircleDollar size={22} weight="duotone" /></div><span>Receita exposta</span><strong>{formatCurrency(view === "produtos" ? productPortfolioSummary.revenueAtAttention : companyPortfolioSummary.affectedCompanyRevenue)}</strong><small>{view === "produtos" ? "Contratos em risco" : "Contas afetadas completas"}</small></article>
       </section>
 
       <section id="analises" className="analytics-grid">
@@ -126,18 +136,20 @@ export function GeneralDashboardPage() {
         <p>Sem histórico validado de saída, os resultados indicam atenção e deterioração, não probabilidade real de cancelamento.</p>
       </section>
 
+      <PredictiveInsights profile="general" />
+
       <section id="clientes" className="panel clients-panel">
         <div className="panel-heading panel-heading--clients">
-          <div><span>Ordem de análise</span><h2>Clientes que exigem atenção</h2><p>{filteredClients.length} de {clients.length} clientes demonstrativos</p></div>
+          <div><span>Ordem de análise</span><h2>{view === "produtos" ? "Produtos monitorados" : "Empresas que exigem atenção"}</h2><p>{visibleCount} resultados demonstrativos</p></div>
           <div className="filters">
-            <label className="search-control"><MagnifyingGlass size={18} /><span className="sr-only">Buscar cliente</span><input value={search} onChange={(event) => setFilter("busca", event.target.value, "")} placeholder="Buscar cliente" /></label>
+            <label className="search-control"><MagnifyingGlass size={18} /><span className="sr-only">Buscar produto ou empresa</span><input value={search} onChange={(event) => setFilter("busca", event.target.value, "")} placeholder="Buscar produto ou empresa" /></label>
             <label className="select-control"><Funnel size={16} /><span className="sr-only">Filtrar por risco</span><select value={risk} onChange={(event) => setFilter("risco", event.target.value, "Todos")}><option>Todos</option><option>Alto</option><option>Médio</option><option>Baixo</option></select></label>
           </div>
         </div>
         <div className="table-scroll">
           <table className="clients-table general-clients-table">
-            <thead><tr><th>Prioridade</th><th>Cliente</th><th>Risco</th><th>Receita mensal</th><th>Evidência principal</th><th>NPS</th><th>Atraso</th><th>Ação</th></tr></thead>
-            <tbody>{filteredClients.map((client) => <tr key={client.id} tabIndex={0} onClick={() => openClient(client.id)} onKeyDown={(event) => { if (event.key === "Enter") openClient(client.id); }}><td><span className="priority-number">{String(client.priority).padStart(2, "0")}</span></td><td><strong>{client.name}</strong><small>{client.segment}</small></td><td><RiskBadge level={client.riskLevel} /></td><td className="revenue-cell">{formatCurrency(client.monthlyRevenue)}</td><td className="signal-cell">{generalPrimaryEvidence[client.id]}</td><td>{client.nps ?? "Sem dado"}</td><td>{client.paymentDelay ? `${client.paymentDelay} dias` : "Em dia"}</td><td><button className="table-action" type="button" onClick={(event) => { event.stopPropagation(); openClient(client.id); }}>Ver análise <ArrowRight size={14} /></button></td></tr>)}</tbody>
+            <thead><tr><th>Prioridade</th><th>{view === "produtos" ? "Produto / empresa" : "Empresa"}</th><th>Risco</th><th>Receita mensal</th><th>Evidência principal</th><th>NPS</th><th>Atraso</th><th>Ação</th></tr></thead>
+            <tbody>{view === "produtos" ? filteredProducts.map((product) => { const company = getCompany(product.companyId)!; return <tr key={product.id} tabIndex={0} onClick={() => openClient(product.id)} onKeyDown={(event) => { if (event.key === "Enter") openClient(product.id); }}><td><span className="priority-number">{String(product.priority).padStart(2, "0")}</span></td><td><strong>{product.productName}</strong><small>{company.name} · {company.segment}</small></td><td><RiskBadge level={product.riskLevel} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{generalPrimaryEvidence[product.id]}</td><td>{company.nps ?? "Sem dado"}</td><td>{company.paymentDelay ? `${company.paymentDelay} dias` : "Em dia"}</td><td><button className="table-action" type="button" onClick={(event) => { event.stopPropagation(); openClient(product.id); }}>Ver produto <ArrowRight size={14} /></button></td></tr>; }) : filteredCompanies.map((portfolio, index) => <tr key={portfolio.company.id} tabIndex={0} onClick={() => openCompany(portfolio.company.id)} onKeyDown={(event) => { if (event.key === "Enter") openCompany(portfolio.company.id); }}><td><span className="priority-number">{String(index + 1).padStart(2, "0")}</span></td><td><strong>{portfolio.company.name}</strong><small>{portfolio.company.segment} · {portfolio.products.length} produto(s)</small></td><td><RiskBadge level={portfolio.riskLevel} score={portfolio.riskScore} /></td><td>{formatCurrency(portfolio.monthlyRevenue)}</td><td className="signal-cell">{portfolio.criticalAlert ? `${portfolio.criticalAlert.productName}: ${portfolio.criticalAlert.primarySignal}` : portfolio.products[0]?.primarySignal}</td><td>{portfolio.company.nps ?? "Sem dado"}</td><td>{portfolio.company.paymentDelay ? `${portfolio.company.paymentDelay} dias` : "Em dia"}</td><td><button className="table-action" type="button" onClick={(event) => { event.stopPropagation(); openCompany(portfolio.company.id); }}>Ver empresa <ArrowRight size={14} /></button></td></tr>)}</tbody>
           </table>
         </div>
       </section>
@@ -190,15 +202,16 @@ export function DataPage() {
 export function GeneralClientDetailPage() {
   const { clienteId } = useParams();
   const location = useLocation();
-  const client = clients.find((item) => item.id === clienteId);
+  const client = portfolioProducts.find((item) => item.id === clienteId);
   const returnTo = (location.state as { from?: string } | null)?.from ?? "/#clientes";
 
   if (!client) return <div className="not-found"><ShieldWarning size={42} /><h1>Cliente não encontrado</h1><p>Este registro não faz parte da base demonstrativa.</p><Link className="primary-button" to="/">Voltar ao dashboard</Link></div>;
+  const company = getCompany(client.companyId)!;
 
   return (
     <div className="client-detail-page general-client-detail">
       <Link className="back-link" to={returnTo}><ArrowLeft size={16} /> Voltar à análise</Link>
-      <section className="client-hero"><div className="client-heading"><span className="eyebrow">Registro da planilha · prioridade {client.priority}</span><div className="client-title-row"><div><h1>{client.name}</h1><p>{client.segment} · {client.plan}</p></div><RiskBadge level={client.riskLevel} /></div></div><div className="client-value"><span>Receita mensal associada</span><strong>{formatCurrency(client.monthlyRevenue)}</strong><small>Valor demonstrativo</small></div></section>
+      <section className="client-hero"><div className="client-heading"><span className="eyebrow">Registro da planilha · prioridade {client.priority}</span><div className="client-title-row"><div><h1>{client.productName}</h1><p><Link to={`/empresas/${company.id}`}>{company.name}</Link> · {company.segment} · {client.plan}</p></div><RiskBadge level={client.riskLevel} /></div></div><div className="client-value"><span>Receita mensal associada</span><strong>{formatCurrency(client.monthlyRevenue)}</strong><small>Valor demonstrativo</small></div></section>
 
       <section className="explanation-panel"><span className="explanation-icon"><ChartBar size={23} weight="duotone" /></span><div><strong>Por que este cliente merece atenção?</strong><p>{generalPrimaryEvidence[client.id]}. A leitura combina a tendência de atividade com atendimento, satisfação, relacionamento e situação financeira registrados na base.</p></div></section>
 

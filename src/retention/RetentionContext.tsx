@@ -1,13 +1,13 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
 import type {
   CancellationReason,
-  CancelledClientMock,
+  CancelledProductMock,
   RewardConfig,
   SurveyCampaign,
   SurveyResponse,
 } from "../types";
 
-const STORAGE_KEY = "inovaapps.mock.retention.v1";
+const STORAGE_KEY = "inovaapps.mock.retention.v2";
 
 export const defaultSurveySubject = "Podemos aprender com a sua experiência?";
 export const defaultSurveyMessage = "Queremos entender como foi sua experiência e onde poderíamos ter entregado mais valor. Sua resposta será usada para melhorar nosso produto e atendimento.";
@@ -29,13 +29,12 @@ export const rewardOptions: RewardConfig[] = [
   { type: "custom", label: "Benefício personalizado", validDays: 30 },
 ];
 
-export const cancelledClients: CancelledClientMock[] = [
+export const cancelledClients: CancelledProductMock[] = [
   {
-    id: "mercado-leste",
-    name: "Mercado Leste",
-    segment: "Varejo",
+    id: "mercado-leste-operacoes",
+    companyId: "mercado-leste",
+    productName: "Plataforma de Operações",
     plan: "Enterprise",
-    solution: "Plataforma de Operações",
     cancelledAt: "12/09/2026",
     cancellationMonth: "Set",
     monthlyRevenueLost: 18000,
@@ -52,11 +51,10 @@ export const cancelledClients: CancelledClientMock[] = [
     dataSource: "mock",
   },
   {
-    id: "clinica-vida",
-    name: "Clínica Vida",
-    segment: "Saúde",
+    id: "clinica-vida-suporte",
+    companyId: "clinica-vida",
+    productName: "Suporte Dedicado",
     plan: "Business",
-    solution: "Suporte Dedicado",
     cancelledAt: "03/09/2026",
     cancellationMonth: "Set",
     monthlyRevenueLost: 12500,
@@ -73,11 +71,10 @@ export const cancelledClients: CancelledClientMock[] = [
     dataSource: "mock",
   },
   {
-    id: "transportes-norte",
-    name: "Transportes Norte",
-    segment: "Logística",
+    id: "transportes-norte-analytics",
+    companyId: "transportes-norte",
+    productName: "Analytics",
     plan: "Enterprise",
-    solution: "Analytics",
     cancelledAt: "18/08/2026",
     cancellationMonth: "Ago",
     monthlyRevenueLost: 21000,
@@ -94,11 +91,10 @@ export const cancelledClients: CancelledClientMock[] = [
     dataSource: "mock",
   },
   {
-    id: "escola-conecta",
-    name: "Escola Conecta",
-    segment: "Educação",
+    id: "escola-conecta-transformacao",
+    companyId: "escola-conecta",
+    productName: "Transformação Digital",
     plan: "Growth",
-    solution: "Transformação Digital",
     cancelledAt: "29/07/2026",
     cancellationMonth: "Jul",
     monthlyRevenueLost: 9800,
@@ -115,11 +111,10 @@ export const cancelledClients: CancelledClientMock[] = [
     dataSource: "mock",
   },
   {
-    id: "industria-vale",
-    name: "Indústria Vale",
-    segment: "Indústria",
+    id: "industria-vale-devops",
+    companyId: "industria-vale",
+    productName: "Integração e DevOps",
     plan: "Enterprise",
-    solution: "Integração e DevOps",
     cancelledAt: "14/06/2026",
     cancellationMonth: "Jun",
     monthlyRevenueLost: 31000,
@@ -136,11 +131,10 @@ export const cancelledClients: CancelledClientMock[] = [
     dataSource: "mock",
   },
   {
-    id: "grupo-central",
-    name: "Grupo Central",
-    segment: "Serviços",
+    id: "grupo-central-ia",
+    companyId: "grupo-central",
+    productName: "Inteligência Artificial",
     plan: "Business",
-    solution: "Inteligência Artificial",
     cancelledAt: "22/05/2026",
     cancellationMonth: "Mai",
     monthlyRevenueLost: 16200,
@@ -163,34 +157,34 @@ interface RetentionState {
   responses: Record<string, SurveyResponse>;
 }
 
-const campaign = (clientId: string, status: "sent" | "responded", reward: RewardConfig): SurveyCampaign => ({
-  clientId,
+const campaign = (productId: string, status: "sent" | "responded", reward: RewardConfig): SurveyCampaign => ({
+  productId,
   status,
   subject: defaultSurveySubject,
   message: defaultSurveyMessage,
   reward,
-  token: `${clientId}-demo`,
+  token: `${productId}-demo`,
   sentAt: "19/09/2026 às 10:15",
 });
 
 const initialState: RetentionState = {
   campaigns: {
-    "mercado-leste": campaign("mercado-leste", "responded", rewardOptions[0]),
-    "clinica-vida": campaign("clinica-vida", "sent", rewardOptions[1]),
-    "transportes-norte": campaign("transportes-norte", "responded", rewardOptions[2]),
-    "escola-conecta": campaign("escola-conecta", "responded", rewardOptions[0]),
-    "industria-vale": campaign("industria-vale", "sent", rewardOptions[1]),
+    "mercado-leste-operacoes": campaign("mercado-leste-operacoes", "responded", rewardOptions[0]),
+    "clinica-vida-suporte": campaign("clinica-vida-suporte", "sent", rewardOptions[1]),
+    "transportes-norte-analytics": campaign("transportes-norte-analytics", "responded", rewardOptions[2]),
+    "escola-conecta-transformacao": campaign("escola-conecta-transformacao", "responded", rewardOptions[0]),
+    "industria-vale-devops": campaign("industria-vale-devops", "sent", rewardOptions[1]),
   },
   responses: {
-    "mercado-leste-demo": { reason: "Falta de integração", missing: "Uma integração nativa com o ERP.", prevention: "Um plano claro para concluir a integração.", returnIntent: "yes", comment: "A equipe sempre foi próxima.", consent: true, answeredAt: "19/09/2026 às 11:20" },
-    "transportes-norte-demo": { reason: "Preço e orçamento", missing: "Um plano menor para o momento atual.", prevention: "Flexibilidade comercial antes da renovação.", returnIntent: "no", comment: "A decisão foi financeira.", consent: true, answeredAt: "18/09/2026 às 16:10" },
-    "escola-conecta-demo": { reason: "Baixo valor percebido", missing: "Acompanhamento dos resultados para a direção.", prevention: "Reuniões mais objetivas sobre retorno.", returnIntent: "maybe", comment: "Podemos conversar no próximo semestre.", consent: true, answeredAt: "17/09/2026 às 09:35" },
+    "mercado-leste-operacoes-demo": { reason: "Falta de integração", missing: "Uma integração nativa com o ERP.", prevention: "Um plano claro para concluir a integração.", returnIntent: "yes", comment: "A equipe sempre foi próxima.", consent: true, answeredAt: "19/09/2026 às 11:20" },
+    "transportes-norte-analytics-demo": { reason: "Preço e orçamento", missing: "Um plano menor para o momento atual.", prevention: "Flexibilidade comercial antes da renovação.", returnIntent: "no", comment: "A decisão foi financeira.", consent: true, answeredAt: "18/09/2026 às 16:10" },
+    "escola-conecta-transformacao-demo": { reason: "Baixo valor percebido", missing: "Acompanhamento dos resultados para a direção.", prevention: "Reuniões mais objetivas sobre retorno.", returnIntent: "maybe", comment: "Podemos conversar no próximo semestre.", consent: true, answeredAt: "17/09/2026 às 09:35" },
   },
 };
 
 interface RetentionContextValue extends RetentionState {
-  sendSurvey: (clientId: string, subject: string, message: string, reward: RewardConfig) => string;
-  submitResponse: (token: string, response: Omit<SurveyResponse, "answeredAt">) => void;
+  sendSurvey: (productId: string, subject: string, message: string, reward: RewardConfig, token?: string) => string;
+  submitResponse: (token: string, response: Omit<SurveyResponse, "answeredAt">, fallbackCampaign?: SurveyCampaign) => void;
   getCampaignByToken: (token: string) => SurveyCampaign | undefined;
 }
 
@@ -215,23 +209,23 @@ export function RetentionProvider({ children }: { children: ReactNode }) {
 
   const value: RetentionContextValue = {
     ...state,
-    sendSurvey(clientId, subject, message, reward) {
-      const token = `${clientId}-demo`;
+    sendSurvey(productId, subject, message, reward, tokenOverride) {
+      const token = tokenOverride ?? `${productId}-demo`;
       const status = state.responses[token] ? "responded" : "sent";
       persist({
         ...state,
         campaigns: {
           ...state.campaigns,
-          [clientId]: { clientId, status, subject, message, reward, token, sentAt: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date()) },
+          [productId]: { productId, status, subject, message, reward, token, sentAt: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date()) },
         },
       });
       return token;
     },
-    submitResponse(token, response) {
-      const activeCampaign = Object.values(state.campaigns).find((item) => item.token === token);
+    submitResponse(token, response, fallbackCampaign) {
+      const activeCampaign = Object.values(state.campaigns).find((item) => item.token === token) ?? fallbackCampaign;
       if (!activeCampaign) return;
       persist({
-        campaigns: { ...state.campaigns, [activeCampaign.clientId]: { ...activeCampaign, status: "responded" } },
+        campaigns: { ...state.campaigns, [activeCampaign.productId]: { ...activeCampaign, status: "responded" } },
         responses: { ...state.responses, [token]: { ...response, answeredAt: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date()) } },
       });
     },

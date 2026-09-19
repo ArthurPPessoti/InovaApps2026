@@ -4,6 +4,7 @@ import { AppShell } from "./components/AppShell";
 import { AccessPage } from "./pages/AccessPage";
 import { ClientDetailPage } from "./pages/ClientDetailPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
+import { CompanyDetailPage } from "./pages/CompanyDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SignalsPage } from "./pages/SignalsPage";
 import { DataPage, GeneralClientDetailPage, GeneralDashboardPage } from "./pages/GeneralExperience";
@@ -22,6 +23,7 @@ function ProtectedApp() {
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/clientes/cancelados/:clienteId" element={<CancelledClientDetailPage />} />
         <Route path="/clientes/:clienteId" element={isTechnology ? <ClientDetailPage /> : <GeneralClientDetailPage />} />
+        <Route path="/empresas/:companyId" element={<CompanyDetailPage />} />
         <Route path="/sinais" element={isTechnology ? <SignalsPage /> : <Navigate to="/" replace />} />
         <Route path="/conexoes" element={isTechnology ? <ConnectionsPage /> : <Navigate to="/dados" replace />} />
         <Route path="/dados" element={isTechnology ? <Navigate to="/conexoes" replace /> : <DataPage />} />
