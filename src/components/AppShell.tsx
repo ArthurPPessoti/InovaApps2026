@@ -1,30 +1,49 @@
 import {
   BellSimple,
+  ChartBar,
   ChartLineUp,
+  FileXls,
   ListChecks,
   PlugsConnected,
   Pulse,
+  SignOut,
   SidebarSimple,
   UsersThree,
   X,
 } from "@phosphor-icons/react";
 import { type ReactNode, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 interface AppShellProps {
   children: ReactNode;
 }
 
-const navItems = [
+const technologyNav = [
   { label: "Visão geral", to: "/#resumo", hash: "#resumo", icon: ChartLineUp },
-  { label: "Clientes", to: "/#clientes", hash: "#clientes", icon: UsersThree },
-  { label: "Sinais", to: "/#sinais", hash: "#sinais", icon: Pulse },
+  { label: "Clientes", to: "/clientes", icon: UsersThree },
+  { label: "Sinais", to: "/sinais", icon: Pulse },
   { label: "Conexões", to: "/conexoes", icon: PlugsConnected },
+];
+
+const generalNav = [
+  { label: "Visão geral", to: "/#resumo", hash: "#resumo", icon: ChartLineUp },
+  { label: "Dados", to: "/dados", icon: FileXls },
+  { label: "Análises", to: "/#analises", hash: "#analises", icon: ChartBar },
+  { label: "Clientes", to: "/clientes", icon: UsersThree },
 ];
 
 export function AppShell({ children }: AppShellProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { account, logout } = useAuth();
+  const navItems = account?.profile === "technology" ? technologyNav : generalNav;
+
+  const leaveAccount = () => {
+    logout();
+    navigate("/acesso", { replace: true });
+  };
 
   return (
     <div className="app-shell">
@@ -54,15 +73,15 @@ export function AppShell({ children }: AppShellProps) {
       <aside className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
         <Link className="brand" to="/" aria-label="Globalsys - Página inicial" onClick={() => setMenuOpen(false)}>
           <img src="/brand/globalsys-logo.svg" alt="Globalsys" />
-          <span>INOVAAPPS 2026</span>
+          <span>{account?.companyName}</span>
         </Link>
 
         <nav className="sidebar-nav" aria-label="Navegação principal">
-          <p className="nav-label">Carteira</p>
+          <p className="nav-label">{account?.profile === "technology" ? "Carteira tecnológica" : "Análise preditiva"}</p>
           {navItems.map(({ label, to, hash, icon: Icon }) => {
             const isActive = hash
               ? location.pathname === "/" && (location.hash === hash || (!location.hash && hash === "#resumo"))
-              : location.pathname === to;
+              : to === "/clientes" ? location.pathname.startsWith("/clientes") : location.pathname === to;
             return (
             <Link
               key={to}
@@ -81,16 +100,19 @@ export function AppShell({ children }: AppShellProps) {
           <ListChecks size={22} weight="duotone" />
           <div>
             <strong>Dados demonstrativos</strong>
-            <span>Scores e prioridades são mocks.</span>
+            <span>{account?.profile === "technology" ? "Tracking e scores são mocks." : "Planilha e análises são mocks."}</span>
           </div>
         </div>
 
         <div className="sidebar-user">
-          <div className="avatar" aria-hidden="true">CS</div>
+          <div className="avatar" aria-hidden="true">{account?.userName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
           <div>
-            <strong>Equipe de Sucesso</strong>
-            <span>Gestão da carteira</span>
+            <strong>{account?.userName}</strong>
+            <span>{account?.profile === "technology" ? "Inteligência de produto" : "Análise de clientes"}</span>
           </div>
+          <button className="sidebar-logout" type="button" onClick={leaveAccount} aria-label="Sair da conta" title="Sair da conta">
+            <SignOut size={18} />
+          </button>
         </div>
       </aside>
 
@@ -102,7 +124,12 @@ export function AppShell({ children }: AppShellProps) {
           </div>
           <div className="topbar-actions">
             <span className="demo-chip">Ambiente demonstrativo</span>
-            <button className="icon-button" type="button" aria-label="Notificações">
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Ver sinais de atenção"
+              onClick={() => navigate(account?.profile === "technology" ? "/sinais" : "/#analises")}
+            >
               <BellSimple size={20} />
               <span className="notification-dot" aria-hidden="true" />
             </button>

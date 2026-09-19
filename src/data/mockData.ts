@@ -60,7 +60,7 @@ export const clients: ClientMock[] = [
         detail: "O volume mensal caiu de 1.204 para 469 pesagens.",
         severity: "Alto",
         timestamp: "Hoje, 08:42",
-        feature: "Pesagem concluída",
+        feature: "Pesagem concluída", dimension: "Uso",
       },
       {
         id: "atlas-s2",
@@ -68,7 +68,7 @@ export const clients: ClientMock[] = [
         detail: "As filiais 03 e 07 não registram eventos há nove dias.",
         severity: "Alto",
         timestamp: "Ontem, 17:18",
-        feature: "Unidades ativas",
+        feature: "Unidades ativas", dimension: "Uso",
       },
       {
         id: "atlas-s3",
@@ -76,7 +76,7 @@ export const clients: ClientMock[] = [
         detail: "Sincronizações com ERP diminuíram 34% no período.",
         severity: "Médio",
         timestamp: "18 set, 15:10",
-        feature: "Integração ERP",
+        feature: "Integração ERP", dimension: "Integração",
       },
     ],
     features: [
@@ -114,7 +114,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 4,
     trend: [{ label: "Jan", value: 92 }, { label: "Fev", value: 88 }, { label: "Mar", value: 83 }, { label: "Abr", value: 76 }, { label: "Mai", value: 70 }, { label: "Jun", value: 62 }],
     usageAndSla: [{ label: "Jan", uso: 92, sla: 96 }, { label: "Fev", uso: 88, sla: 92 }, { label: "Mar", uso: 83, sla: 88 }, { label: "Abr", uso: 78, sla: 82 }, { label: "Mai", uso: 76, sla: 76 }, { label: "Jun", uso: 74, sla: 71 }],
-    signals: [{ id: "ch-s1", title: "SLA abaixo do contratado", detail: "Apenas 71% dos chamados foram resolvidos no prazo.", severity: "Alto", timestamp: "Hoje, 09:12", feature: "Atendimento" }],
+    signals: [{ id: "ch-s1", title: "SLA abaixo do contratado", detail: "Apenas 71% dos chamados foram resolvidos no prazo.", severity: "Alto", timestamp: "Hoje, 09:12", feature: "Atendimento", dimension: "Atendimento" }],
     features: [
       { id: "f1", name: "Abertura de chamados", status: "Saudável", health: 87, variation: 12, lastActivity: "Há 36 min", note: "Canal segue ativo" },
       { id: "f2", name: "Resolução no SLA", status: "Crítico", health: 39, variation: -25, lastActivity: "Hoje", note: "Três chamados críticos" },
@@ -144,7 +144,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 0,
     trend: [{ label: "Jan", value: 89 }, { label: "Fev", value: 87 }, { label: "Mar", value: 71 }, { label: "Abr", value: 58 }, { label: "Mai", value: 42 }, { label: "Jun", value: 28 }],
     usageAndSla: [{ label: "Jan", uso: 89, sla: 98 }, { label: "Fev", uso: 87, sla: 97 }, { label: "Mar", uso: 71, sla: 96 }, { label: "Abr", uso: 58, sla: 95 }, { label: "Mai", uso: 42, sla: 95 }, { label: "Jun", uso: 28, sla: 94 }],
-    signals: [{ id: "vn-s1", title: "Ausência de usuários decisores", detail: "Nenhum gestor acessa os dashboards há 21 dias.", severity: "Alto", timestamp: "Hoje, 06:00", feature: "Analytics" }],
+    signals: [{ id: "vn-s1", title: "Ausência de usuários decisores", detail: "Nenhum gestor acessa os dashboards há 21 dias.", severity: "Alto", timestamp: "Hoje, 06:00", feature: "Analytics", dimension: "Uso" }],
     features: [
       { id: "f1", name: "Visualização de dashboards", status: "Crítico", health: 24, variation: -69, lastActivity: "Há 21 dias", note: "Nenhum gestor ativo" },
       { id: "f2", name: "Exportação de relatórios", status: "Crítico", health: 18, variation: -81, lastActivity: "Há 27 dias", note: "Sem exportações no mês" },
@@ -174,7 +174,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 0,
     trend: [{ label: "Jan", value: 90 }, { label: "Fev", value: 88 }, { label: "Mar", value: 86 }, { label: "Abr", value: 82 }, { label: "Mai", value: 79 }, { label: "Jun", value: 72 }],
     usageAndSla: [{ label: "Jan", uso: 90, sla: 96 }, { label: "Fev", uso: 88, sla: 92 }, { label: "Mar", uso: 86, sla: 89 }, { label: "Abr", uso: 82, sla: 85 }, { label: "Mai", uso: 79, sla: 82 }, { label: "Jun", uso: 77, sla: 79 }],
-    signals: [{ id: "io-s1", title: "Integração crítica instável", detail: "Foram registradas 46 falhas em sete dias.", severity: "Alto", timestamp: "Hoje, 09:26", feature: "Integração ERP" }],
+    signals: [{ id: "io-s1", title: "Integração crítica instável", detail: "Foram registradas 46 falhas em sete dias.", severity: "Alto", timestamp: "Hoje, 09:26", feature: "Integração ERP", dimension: "Integração" }],
     features: [
       { id: "f1", name: "Pipelines", status: "Saudável", health: 84, variation: -3, lastActivity: "Há 1 h", note: "Frequência regular" },
       { id: "f2", name: "Integração ERP", status: "Crítico", health: 34, variation: -48, lastActivity: "Há 24 min", note: "46 falhas recentes" },
@@ -204,7 +204,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 2,
     trend: [{ label: "Jan", value: 84 }, { label: "Fev", value: 82 }, { label: "Mar", value: 78 }, { label: "Abr", value: 73 }, { label: "Mai", value: 69 }, { label: "Jun", value: 68 }],
     usageAndSla: [{ label: "Jan", uso: 84, sla: 96 }, { label: "Fev", uso: 82, sla: 95 }, { label: "Mar", uso: 78, sla: 94 }, { label: "Abr", uso: 73, sla: 93 }, { label: "Mai", uso: 69, sla: 92 }, { label: "Jun", uso: 68, sla: 91 }],
-    signals: [{ id: "ed-s1", title: "Relacionamento interrompido", detail: "Três reuniões previstas não foram realizadas.", severity: "Médio", timestamp: "Ontem, 16:40", feature: "Reuniões" }],
+    signals: [{ id: "ed-s1", title: "Relacionamento interrompido", detail: "Três reuniões previstas não foram realizadas.", severity: "Médio", timestamp: "Ontem, 16:40", feature: "Reuniões", dimension: "Relacionamento" }],
     features: [
       { id: "f1", name: "Fluxos digitais", status: "Atenção", health: 64, variation: -19, lastActivity: "Ontem", note: "Adoção em queda" },
       { id: "f2", name: "Reuniões", status: "Crítico", health: 22, variation: -100, lastActivity: "Há 31 dias", note: "Nenhuma reunião realizada" },
@@ -234,7 +234,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 0,
     trend: [{ label: "Jan", value: 100 }, { label: "Fev", value: 97 }, { label: "Mar", value: 90 }, { label: "Abr", value: 82 }, { label: "Mai", value: 74 }, { label: "Jun", value: 68 }],
     usageAndSla: [{ label: "Jan", uso: 100, sla: 98 }, { label: "Fev", uso: 97, sla: 98 }, { label: "Mar", uso: 90, sla: 97 }, { label: "Abr", uso: 82, sla: 97 }, { label: "Mai", uso: 74, sla: 96 }, { label: "Jun", uso: 68, sla: 96 }],
-    signals: [{ id: "sp-s1", title: "Menos execuções automatizadas", detail: "Volume caiu 32% em três meses.", severity: "Médio", timestamp: "Hoje, 07:00", feature: "RPA" }],
+    signals: [{ id: "sp-s1", title: "Menos execuções automatizadas", detail: "Volume caiu 32% em três meses.", severity: "Médio", timestamp: "Hoje, 07:00", feature: "RPA", dimension: "Uso" }],
     features: [
       { id: "f1", name: "Execuções RPA", status: "Atenção", health: 62, variation: -32, lastActivity: "Há 2 h", note: "Queda progressiva" },
       { id: "f2", name: "Taxa de sucesso", status: "Saudável", health: 94, variation: 1, lastActivity: "Há 2 h", note: "Sem deterioração técnica" },
@@ -264,7 +264,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 0,
     trend: [{ label: "Jan", value: 86 }, { label: "Fev", value: 85 }, { label: "Mar", value: 83 }, { label: "Abr", value: 80 }, { label: "Mai", value: 78 }, { label: "Jun", value: 74 }],
     usageAndSla: [{ label: "Jan", uso: 86, sla: 94 }, { label: "Fev", uso: 85, sla: 92 }, { label: "Mar", uso: 83, sla: 91 }, { label: "Abr", uso: 82, sla: 89 }, { label: "Mai", uso: 82, sla: 86 }, { label: "Jun", uso: 82, sla: 84 }],
-    signals: [{ id: "rs-s1", title: "Satisfação em deterioração", detail: "NPS 3 e quatro chamados reabertos.", severity: "Médio", timestamp: "18 set, 14:20", feature: "Atendimento" }],
+    signals: [{ id: "rs-s1", title: "Satisfação em deterioração", detail: "NPS 3 e quatro chamados reabertos.", severity: "Médio", timestamp: "18 set, 14:20", feature: "Atendimento", dimension: "Atendimento" }],
     features: [
       { id: "f1", name: "Uso da plataforma", status: "Saudável", health: 84, variation: -5, lastActivity: "Há 40 min", note: "Volume regular" },
       { id: "f2", name: "Resolução de chamados", status: "Atenção", health: 59, variation: -21, lastActivity: "Hoje", note: "Quatro reaberturas" },
@@ -294,7 +294,7 @@ export const clients: ClientMock[] = [
     paymentDelay: 0,
     trend: [{ label: "Jan", value: 100 }, { label: "Fev", value: 96 }, { label: "Mar", value: 89 }, { label: "Abr", value: 79 }, { label: "Mai", value: 68 }, { label: "Jun", value: 60 }],
     usageAndSla: [{ label: "Jan", uso: 100, sla: 99 }, { label: "Fev", uso: 96, sla: 99 }, { label: "Mar", uso: 89, sla: 98 }, { label: "Abr", uso: 79, sla: 98 }, { label: "Mai", uso: 68, sla: 97 }, { label: "Jun", uso: 60, sla: 97 }],
-    signals: [{ id: "ga-s1", title: "Adoção concentrada", detail: "Usuários ativos caíram de 25 para 15.", severity: "Médio", timestamp: "Hoje, 08:00", feature: "IA" }],
+    signals: [{ id: "ga-s1", title: "Adoção concentrada", detail: "Usuários ativos caíram de 25 para 15.", severity: "Médio", timestamp: "Hoje, 08:00", feature: "IA", dimension: "Uso" }],
     features: [
       { id: "f1", name: "Usuários ativos", status: "Atenção", health: 60, variation: -40, lastActivity: "Hoje", note: "Dez usuários deixaram de acessar" },
       { id: "f2", name: "Recomendações vistas", status: "Atenção", health: 66, variation: -29, lastActivity: "Hoje", note: "Menor alcance" },
@@ -345,8 +345,72 @@ export const segmentAttention = [
   { segment: "Educação", clients: 1 },
 ];
 
-export const recentSignals = clients.flatMap((client) =>
-  client.signals.slice(0, 1).map((signal) => ({ ...signal, clientId: client.id, clientName: client.name })),
+// Contas saudáveis com uma função crítica em queda: ficam fora de `clients` para não alterar a carteira em atenção.
+export const watchClients: ClientMock[] = [
+  {
+    id: "porto-sul",
+    name: "Porto Sul Distribuição",
+    segment: "Logística",
+    plan: "Avançado",
+    solution: "Plataforma de Operações",
+    priority: 9,
+    riskLevel: "Baixo",
+    riskScore: 28,
+    monthlyRevenue: 21000,
+    primarySignal: "Integração ERP caiu 52% em 4 semanas",
+    explanation: "A conta segue saudável: acesso, SLA e pagamentos estão normais. Porém a integração com o ERP, função crítica do contrato, perdeu metade do volume e parte dos pedidos voltou a ser lançada manualmente.",
+    usage: 91,
+    sla: 97,
+    nps: 9,
+    openTickets: 1,
+    meetings: "2 de 2",
+    paymentDelay: 0,
+    trend: [{ label: "Jan", value: 92 }, { label: "Fev", value: 93 }, { label: "Mar", value: 92 }, { label: "Abr", value: 91 }, { label: "Mai", value: 90 }, { label: "Jun", value: 91 }],
+    usageAndSla: [{ label: "Jan", uso: 92, sla: 98 }, { label: "Fev", uso: 93, sla: 98 }, { label: "Mar", uso: 92, sla: 97 }, { label: "Abr", uso: 91, sla: 97 }, { label: "Mai", uso: 90, sla: 97 }, { label: "Jun", uso: 91, sla: 97 }],
+    signals: [{ id: "ps-s1", title: "Função crítica em queda silenciosa", detail: "Sincronizações com ERP caíram de 3.180 para 1.526 em quatro semanas.", severity: "Médio", timestamp: "Hoje, 10:05", feature: "Integração ERP", dimension: "Integração" }],
+    features: [
+      { id: "f1", name: "Login", status: "Saudável", health: 94, variation: 2, lastActivity: "Há 5 min", note: "31 usuários ativos" },
+      { id: "f2", name: "Integração ERP", status: "Crítico", health: 42, variation: -52, lastActivity: "Há 3 h", note: "Função crítica do contrato" },
+      { id: "f3", name: "Roteirização", status: "Saudável", health: 88, variation: 1, lastActivity: "Há 20 min", note: "Uso dentro do padrão" },
+    ],
+    events: [{ id: "e1", feature: "Integração ERP", action: "pedido.lancado_manual", result: "Alerta", timestamp: "Hoje, 10:05", context: "38 pedidos fora da integração" }],
+    actions: commonActions("a integração com o ERP"),
+    dataSource: "mock",
+  },
+  {
+    id: "rede-vitta",
+    name: "Rede Vitta Farmácias",
+    segment: "Varejo",
+    plan: "Enterprise",
+    solution: "Inteligência Artificial",
+    priority: 10,
+    riskLevel: "Baixo",
+    riskScore: 24,
+    monthlyRevenue: 47000,
+    primarySignal: "Gestores deixaram de ver as previsões",
+    explanation: "O uso operacional segue alto e a conta está adimplente. Porém nenhum gestor abriu o painel de previsões de demanda nas últimas três semanas, justamente o módulo que justifica o plano Enterprise.",
+    usage: 88,
+    sla: 99,
+    nps: 8,
+    openTickets: 0,
+    meetings: "1 de 2",
+    paymentDelay: 0,
+    trend: [{ label: "Jan", value: 90 }, { label: "Fev", value: 91 }, { label: "Mar", value: 89 }, { label: "Abr", value: 90 }, { label: "Mai", value: 88 }, { label: "Jun", value: 88 }],
+    usageAndSla: [{ label: "Jan", uso: 90, sla: 99 }, { label: "Fev", uso: 91, sla: 99 }, { label: "Mar", uso: 89, sla: 99 }, { label: "Abr", uso: 90, sla: 99 }, { label: "Mai", uso: 88, sla: 99 }, { label: "Jun", uso: 88, sla: 99 }],
+    signals: [{ id: "rv-s1", title: "Módulo premium sem decisores", detail: "Previsões de demanda sem acesso de gestores há 21 dias; antes eram 40 acessos por semana.", severity: "Médio", timestamp: "Hoje, 07:40", feature: "Previsão de demanda", dimension: "Uso" }],
+    features: [
+      { id: "f1", name: "Recomendações de reposição", status: "Saudável", health: 90, variation: 3, lastActivity: "Há 12 min", note: "Uso operacional estável" },
+      { id: "f2", name: "Previsão de demanda", status: "Crítico", health: 28, variation: -68, lastActivity: "Há 21 dias", note: "Módulo do plano Enterprise" },
+      { id: "f3", name: "Alertas de ruptura", status: "Saudável", health: 85, variation: -2, lastActivity: "Há 1 h", note: "Dentro do padrão" },
+    ],
+    events: [{ id: "e1", feature: "Previsão", action: "painel.sem_acesso", result: "Alerta", timestamp: "Hoje, 07:40", context: "21 dias sem gestores" }],
+    actions: commonActions("o uso das previsões pelos gestores"),
+    dataSource: "mock",
+  },
+];
+
+export const allSignals = [...clients, ...watchClients].flatMap((client) =>
+  client.signals.map((signal) => ({ ...signal, client })),
 );
 
 export const portfolioSummary = {

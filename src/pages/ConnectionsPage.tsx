@@ -9,6 +9,7 @@ import {
   UploadSimple,
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
+import { isSupportedSpreadsheet, useAuth } from "../auth/AuthContext";
 
 const sources = [
   {
@@ -46,11 +47,13 @@ const sources = [
 ] as const;
 
 export function ConnectionsPage() {
+  const { account, updateSpreadsheet } = useAuth();
   const [connected, setConnected] = useState<Set<string>>(
     () => new Set(sources.filter((source) => source.connected).map((source) => source.id)),
   );
   const [trackingOpen, setTrackingOpen] = useState(false);
-  const [fileName, setFileName] = useState("");
+  const [fileName, setFileName] = useState(account?.spreadsheet?.fileName ?? "");
+  const [fileError, setFileError] = useState("");
 
   const activeCount = useMemo(() => connected.size + (fileName ? 1 : 0), [connected, fileName]);
 
@@ -60,6 +63,17 @@ export function ConnectionsPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const selectFile = (file?: File) => {
+    if (!file) return;
+    if (!isSupportedSpreadsheet(file.name)) {
+      setFileError("Use um arquivo .xlsx, .xls ou .csv.");
+      return;
+    }
+    setFileError("");
+    setFileName(file.name);
+    updateSpreadsheet(file.name);
   };
 
   return (
@@ -169,10 +183,11 @@ export function ConnectionsPage() {
               className="sr-only"
               type="file"
               accept=".xlsx,.xls,.csv"
-              onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+              onChange={(event) => selectFile(event.target.files?.[0])}
             />
           </label>
         </div>
+        {fileError && <p className="form-error data-feedback" role="alert">{fileError}</p>}
       </section>
     </div>
   );

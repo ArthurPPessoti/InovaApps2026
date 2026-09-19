@@ -23,7 +23,7 @@ import {
   YAxis,
 } from "recharts";
 import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
-import { clients } from "../data/mockData";
+import { clients, watchClients } from "../data/mockData";
 
 function DetailTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -38,7 +38,7 @@ function DetailTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function ClientDetailPage() {
   const { clienteId } = useParams();
   const location = useLocation();
-  const client = clients.find((item) => item.id === clienteId);
+  const client = [...clients, ...watchClients].find((item) => item.id === clienteId);
   const backTarget = (location.state as { from?: string } | null)?.from ?? "/#clientes";
 
   if (!client) {

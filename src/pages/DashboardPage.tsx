@@ -24,7 +24,7 @@ import {
   YAxis,
 } from "recharts";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
-import { clients, portfolioSeries, portfolioSummary, recentSignals, segmentAttention } from "../data/mockData";
+import { clients, portfolioSeries, portfolioSummary, segmentAttention } from "../data/mockData";
 
 const periodOptions = [
   { value: "3", label: "3 meses" },
@@ -32,7 +32,7 @@ const periodOptions = [
   { value: "12", label: "12 meses" },
 ] as const;
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+export function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="chart-tooltip">
@@ -242,23 +242,6 @@ export function DashboardPage() {
             <button type="button" className="secondary-button" onClick={() => setSearchParams({})}>Limpar filtros</button>
           </div>
         )}
-      </section>
-
-      <section id="sinais" className="signals-section">
-        <div className="section-heading">
-          <div><span>Sinais do tracking</span><h2>Mudanças recentes de comportamento</h2></div>
-          <p>Eventos demonstrativos enviados pelas soluções monitoradas.</p>
-        </div>
-        <div className="signal-feed-grid">
-          {recentSignals.slice(0, 6).map((signal) => (
-            <button key={signal.id} className="signal-feed-card" type="button" onClick={() => openClient(signal.clientId)}>
-              <span className={`signal-severity signal-severity--${signal.severity.toLowerCase().replace("é", "e")}`}><Pulse size={16} weight="fill" /> {signal.feature}</span>
-              <strong>{signal.clientName}</strong>
-              <p>{signal.detail}</p>
-              <small>{signal.timestamp}</small>
-            </button>
-          ))}
-        </div>
       </section>
     </div>
   );
