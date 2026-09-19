@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Aplicação externa de demonstração para eventos do Sistema de Estoque." />
+    <title>Sistema de Estoque | Demo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="inventory-shell">
+      <header class="inventory-header">
+        <div class="brand-mark" aria-hidden="true">SE</div>
+        <div>
+          <span class="eyebrow">Aplicação externa de demonstração</span>
+          <h1>Sistema de Estoque</h1>
+          <p>Simule funcionalidades reais e envie eventos para a plataforma.</p>
+        </div>
+        <div class="current-user">
+          <span>Usuário atual</span>
+          <strong>user_001</strong>
+        </div>
+      </header>
+
+      <section class="actions-section" aria-labelledby="actions-title">
+        <div class="section-heading">
+          <div>
+            <span>Operação</span>
+            <h2 id="actions-title">Funcionalidades disponíveis</h2>
+          </div>
+          <span class="integration-status"><i aria-hidden="true"></i> Tracker server-side</span>
+        </div>
+
+        <div class="action-grid">
+          <article class="action-card">
+            <span class="action-number">01</span>
+            <h3>Cadastrar produto</h3>
+            <p>Simula a inclusão de um novo item no catálogo do estoque.</p>
+            <button type="button" data-action="cadastrar-produto">Cadastrar produto</button>
+          </article>
+
+          <article class="action-card">
+            <span class="action-number">02</span>
+            <h3>Consultar estoque</h3>
+            <p>Simula uma consulta à disponibilidade atual dos produtos.</p>
+            <button type="button" data-action="consultar-estoque">Consultar estoque</button>
+          </article>
+
+          <article class="action-card">
+            <span class="action-number">03</span>
+            <h3>Gerar relatório</h3>
+            <p>Simula a geração de um relatório consolidado da operação.</p>
+            <button type="button" data-action="gerar-relatorio">Gerar relatório</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="activity-panel" aria-live="polite" aria-atomic="true">
+        <div class="activity-icon" aria-hidden="true">↗</div>
+        <div>
+          <span>Última atividade</span>
+          <strong id="activity-title">Nenhuma funcionalidade executada</strong>
+          <p id="activity-detail">Escolha uma ação para enviar o primeiro evento.</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

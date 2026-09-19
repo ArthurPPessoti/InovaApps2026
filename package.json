@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:tracker": "node --test tracker/createTracker.test.mjs",
+    "test:tracker:real": "node scripts/test-tracker.mjs",
+    "demo:start": "node --env-file=demo-app/.env demo-app/server.mjs",
+    "test:demo": "node --test demo-app/actions.test.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
