@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.claude/
+.gitnexus/
+CLAUDE.md
+public/brand/globalsys-logo.png
+*.tsbuildinfo
