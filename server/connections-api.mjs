@@ -14,6 +14,15 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import {
+  getClientTelemetry,
+  linkApplicationToClient,
+} from "./client-telemetry.mjs";
+import {
+  getClientProductAnalyticsSummary,
+  getProductAnalyticsSummary,
+  normalizeAnalyticsFrom,
+} from "./product-analytics.mjs";
 
 const DATA_DIRECTORY = join(process.cwd(), ".data", "connections");
 const DATABASE_PATH = join(DATA_DIRECTORY, "connections.sqlite");
@@ -143,6 +152,14 @@ function openDatabase() {
     CREATE INDEX IF NOT EXISTS idx_connection_events_application_time
       ON connection_events(application_id, received_at DESC);
   `);
+  const applicationColumns = database.prepare("PRAGMA table_info(connection_applications)").all();
+  if (!applicationColumns.some((column) => column.name === "client_id")) {
+    database.exec("ALTER TABLE connection_applications ADD COLUMN client_id TEXT;");
+  }
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_connection_applications_client
+      ON connection_applications(client_id);
+  `);
   return database;
 }
 
@@ -165,7 +182,8 @@ function mapApplication(row) {
   return {
     id: row.id,
     name: row.name,
-    client: row.client_name,
+    clientId: row.client_id ?? null,
+    client: row.client_id ? row.client_name : null,
     type: row.application_type,
     status: row.integration_status,
     createdAt: row.created_at,
@@ -213,14 +231,15 @@ function insertApplication(database, encryptionKey, input, preservedId) {
 
   database.prepare(`
     INSERT INTO connection_applications (
-      id, name, client_name, application_type, integration_status,
+      id, name, client_name, client_id, application_type, integration_status,
       credential_hash, credential_encrypted, credential_iv, credential_tag,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, 'waiting_integration', ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, 'waiting_integration', ?, ?, ?, ?, ?, ?)
   `).run(
     applicationId,
     input.name,
     input.client,
+    input.clientId ?? null,
     input.type,
     hashCredential(credential),
     encryptedCredential.encrypted,
@@ -236,8 +255,9 @@ function insertApplication(database, encryptionKey, input, preservedId) {
 function normalizeApplicationInput(body) {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const client = typeof body.client === "string" ? body.client.trim() : "";
+  const clientId = typeof body.clientId === "string" ? body.clientId.trim() : "";
   const type = body.type === "internal" || body.type === "multiuser" ? body.type : "";
-  return { name, client, type };
+  return { name, client, clientId, type };
 }
 
 function normalizeFeatureInput(body) {
@@ -261,8 +281,8 @@ async function handleApi(request, response, database, encryptionKey) {
 
   if (method === "POST" && url.pathname === "/api/connections/applications") {
     const input = normalizeApplicationInput(await readJson(request));
-    if (!input.name || !input.client || !input.type) {
-      sendJson(response, 400, { error: "Informe nome, cliente e tipo da aplicação." });
+    if (!input.name || !input.client || !input.clientId || !input.type) {
+      sendJson(response, 400, { error: "Informe nome, cliente relacionado e tipo da aplicação." });
       return true;
     }
 
@@ -383,6 +403,100 @@ async function handleApi(request, response, database, encryptionKey) {
       LIMIT 200
     `).all(eventsMatch[1]);
     sendJson(response, 200, { events });
+    return true;
+  }
+
+  const clientLinkMatch = url.pathname.match(/^\/api\/connections\/applications\/(app_[a-zA-Z0-9]+)\/client$/);
+  if (method === "PATCH" && clientLinkMatch) {
+    const body = await readJson(request);
+    const clientId = typeof body.clientId === "string" ? body.clientId.trim() : "";
+    const clientName = typeof body.client === "string" ? body.client.trim() : "";
+    if (!clientId || clientId.length > 128 || !clientName || clientName.length > 200) {
+      sendJson(response, 400, { error: "Selecione um cliente válido da carteira." });
+      return true;
+    }
+
+    const linked = linkApplicationToClient(
+      database,
+      clientLinkMatch[1],
+      clientId,
+      clientName,
+      new Date().toISOString(),
+    );
+    if (!linked) {
+      sendJson(response, 404, { error: "Aplicação não encontrada." });
+      return true;
+    }
+    sendJson(response, 200, {
+      application: getApplication(database, clientLinkMatch[1], encryptionKey),
+    });
+    return true;
+  }
+
+  const analyticsMatch = url.pathname.match(/^\/api\/product-analytics\/applications\/(app_[a-zA-Z0-9]+)\/summary$/);
+  if (method === "GET" && analyticsMatch) {
+    let from;
+    try {
+      from = normalizeAnalyticsFrom(url.searchParams.get("from"));
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+      return true;
+    }
+
+    const summary = getProductAnalyticsSummary(database, analyticsMatch[1], from);
+    if (!summary) {
+      sendJson(response, 404, { error: "Aplicação não encontrada." });
+      return true;
+    }
+    sendJson(response, 200, summary);
+    return true;
+  }
+
+  const clientAnalyticsMatch = url.pathname.match(/^\/api\/product-analytics\/clients\/([^/]+)\/summary$/);
+  if (method === "GET" && clientAnalyticsMatch) {
+    let clientId;
+    let from;
+    try {
+      clientId = decodeURIComponent(clientAnalyticsMatch[1]).trim();
+      from = normalizeAnalyticsFrom(url.searchParams.get("from"));
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+      return true;
+    }
+
+    const applicationId = url.searchParams.get("application_id")?.trim() || null;
+    if (!clientId || clientId.length > 128) {
+      sendJson(response, 400, { error: "Identificador de cliente inválido." });
+      return true;
+    }
+    if (applicationId && !/^app_[a-zA-Z0-9]+$/.test(applicationId)) {
+      sendJson(response, 400, { error: "Application ID inválido." });
+      return true;
+    }
+
+    const summary = getClientProductAnalyticsSummary(database, clientId, from, applicationId);
+    if (!summary) {
+      sendJson(response, 404, { error: "A aplicação selecionada não pertence a este cliente." });
+      return true;
+    }
+    sendJson(response, 200, summary);
+    return true;
+  }
+
+  const clientTelemetryMatch = url.pathname.match(/^\/api\/clients\/([^/]+)\/telemetry$/);
+  if (method === "GET" && clientTelemetryMatch) {
+    let clientId;
+    try {
+      clientId = decodeURIComponent(clientTelemetryMatch[1]).trim();
+    } catch {
+      sendJson(response, 400, { error: "Identificador de cliente inválido." });
+      return true;
+    }
+    if (!clientId || clientId.length > 128) {
+      sendJson(response, 400, { error: "Identificador de cliente inválido." });
+      return true;
+    }
+    sendJson(response, 200, getClientTelemetry(database, clientId));
     return true;
   }
 

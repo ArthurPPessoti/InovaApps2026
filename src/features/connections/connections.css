@@ -306,7 +306,8 @@
   text-transform: uppercase;
 }
 
-.connect-field input {
+.connect-field input,
+.connect-field select {
   width: 100%;
 }
 
@@ -545,6 +546,44 @@
 .connect-application-id code {
   color: var(--cyan-400);
   font-family: Consolas, "Courier New", monospace;
+}
+
+.connect-client-value {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.connect-inline-action {
+  padding: 0;
+  flex: 0 0 auto;
+  border: 0;
+  color: var(--cyan-400);
+  background: transparent;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.connect-client-link-form {
+  margin-top: 16px;
+  padding: 15px;
+  border: 1px solid rgba(0, 243, 255, 0.18);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 243, 255, 0.035);
+}
+
+.connect-client-link-form .connect-form-error {
+  margin-top: 10px;
+}
+
+.connect-client-link-actions {
+  display: flex;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .connect-feature-form {

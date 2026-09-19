@@ -20,10 +20,12 @@ import {
   addFeature,
   createApplication,
   getApplication,
+  linkApplicationClient,
   listApplications,
   listEvents,
   migrateLegacyApplications,
 } from "./connectionApi";
+import { connectionClientOptions, type ConnectionClientOption } from "./clientOptions";
 import type {
   ApplicationType,
   ConnectedApplication,
@@ -108,12 +110,22 @@ export function ConnectionsFeature() {
     setApplications((current) => current.map((item) => item.id === id ? application : item));
   };
 
+  const handleLinkClient = async (id: string, clientId: string) => {
+    const client = connectionClientOptions.find((item) => item.id === clientId);
+    if (!client) throw new Error("Selecione um cliente válido da carteira.");
+    const application = await linkApplicationClient(id, {
+      clientId: client.id,
+      client: client.displayName,
+    });
+    setApplications((current) => current.map((item) => item.id === id ? application : item));
+  };
+
   if (loading) {
     return <LoadingState label="Carregando aplicações..." />;
   }
 
   if (view === "new") {
-    return <NewApplicationForm onCancel={showList} onCreate={handleCreateApplication} />;
+    return <NewApplicationForm clients={connectionClientOptions} onCancel={showList} onCreate={handleCreateApplication} />;
   }
 
   if (applicationId) {
@@ -128,7 +140,9 @@ export function ConnectionsFeature() {
         onBack={showList}
         onTabChange={(tab) => setSearchParams({ application: applicationId, tab })}
         onAddFeature={(input) => handleAddFeature(applicationId, input)}
+        onLinkClient={(clientId) => handleLinkClient(applicationId, clientId)}
         onRefresh={() => refreshApplication(applicationId)}
+        clients={connectionClientOptions}
         pageError={pageError}
       />
     );
@@ -182,7 +196,7 @@ export function ConnectionsFeature() {
                 <div className="connect-app-copy">
                   <span>{applicationTypeLabels[application.type]}</span>
                   <h3>{application.name}</h3>
-                  <p>Cliente: {application.client}</p>
+                  <p>Cliente: {application.clientId && application.client ? `${application.clientId} — ${application.client}` : "Não vinculado"}</p>
                 </div>
                 <div className="connect-app-meta">
                   <span><IdentificationCard size={15} /> {application.id}</span>
@@ -235,14 +249,16 @@ function ErrorMessage({ message }: { message: string }) {
 }
 
 function NewApplicationForm({
+  clients,
   onCancel,
   onCreate,
 }: {
+  clients: ConnectionClientOption[];
   onCancel: () => void;
   onCreate: (input: NewApplicationInput) => Promise<void>;
 }) {
   const [name, setName] = useState("");
-  const [client, setClient] = useState("");
+  const [clientId, setClientId] = useState("");
   const [type, setType] = useState<ApplicationType | "">("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -251,14 +267,15 @@ function NewApplicationForm({
     event.preventDefault();
     setError("");
 
-    if (!name.trim() || !client.trim() || !type) {
+    const client = clients.find((item) => item.id === clientId);
+    if (!name.trim() || !client || !type) {
       setError("Preencha todos os campos e selecione o tipo da aplicação.");
       return;
     }
 
     setSubmitting(true);
     try {
-      await onCreate({ name, client, type });
+      await onCreate({ name, clientId: client.id, client: client.displayName, type });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Não foi possível criar a aplicação.");
     } finally {
@@ -293,13 +310,17 @@ function NewApplicationForm({
             />
           </label>
           <label className="connect-field">
-            <span>Cliente</span>
-            <input
+            <span>Cliente relacionado</span>
+            <select
               required
-              value={client}
-              onChange={(event) => setClient(event.target.value)}
-              placeholder="Ex.: Empresa XPTO"
-            />
+              value={clientId}
+              onChange={(event) => setClientId(event.target.value)}
+            >
+              <option value="">Selecione um cliente da carteira</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>{client.id} — {client.displayName}</option>
+              ))}
+            </select>
           </label>
         </div>
 
@@ -384,7 +405,9 @@ function ApplicationDetail({
   onBack,
   onTabChange,
   onAddFeature,
+  onLinkClient,
   onRefresh,
+  clients,
   pageError,
 }: {
   application: ConnectedApplication | undefined;
@@ -392,7 +415,9 @@ function ApplicationDetail({
   onBack: () => void;
   onTabChange: (tab: DetailTab) => void;
   onAddFeature: (input: NewFeatureInput) => Promise<void>;
+  onLinkClient: (clientId: string) => Promise<void>;
   onRefresh: () => Promise<ConnectedApplication>;
+  clients: ConnectionClientOption[];
   pageError: string;
 }) {
   if (!application) {
@@ -425,7 +450,7 @@ function ApplicationDetail({
           <div>
             <span className="eyebrow">{applicationTypeLabels[application.type]}</span>
             <h1>{application.name}</h1>
-            <p>{application.client}</p>
+            <p>{application.clientId && application.client ? `${application.clientId} — ${application.client}` : "Cliente não vinculado"}</p>
           </div>
         </div>
         <StatusBadge application={application} />
@@ -440,7 +465,14 @@ function ApplicationDetail({
       </nav>
 
       <div className="connect-tab-content">
-        {activeTab === "configuration" && <ConfigurationTab application={application} onAddFeature={onAddFeature} />}
+        {activeTab === "configuration" && (
+          <ConfigurationTab
+            application={application}
+            clients={clients}
+            onAddFeature={onAddFeature}
+            onLinkClient={onLinkClient}
+          />
+        )}
         {activeTab === "events" && <EventsTab application={application} onRefresh={onRefresh} />}
         {activeTab === "integration" && <IntegrationTab application={application} />}
       </div>
@@ -464,16 +496,47 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function ConfigurationTab({
   application,
+  clients,
   onAddFeature,
+  onLinkClient,
 }: {
   application: ConnectedApplication;
+  clients: ConnectionClientOption[];
   onAddFeature: (input: NewFeatureInput) => Promise<void>;
+  onLinkClient: (clientId: string) => Promise<void>;
 }) {
   const [addingFeature, setAddingFeature] = useState(false);
   const [name, setName] = useState("");
   const [eventName, setEventName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [linkingClient, setLinkingClient] = useState(!application.clientId);
+  const [selectedClientId, setSelectedClientId] = useState(application.clientId ?? "");
+  const [linkError, setLinkError] = useState("");
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
+
+  useEffect(() => {
+    setSelectedClientId(application.clientId ?? "");
+    setLinkingClient(!application.clientId);
+  }, [application.id, application.clientId]);
+
+  const submitClientLink = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedClientId) {
+      setLinkError("Selecione um cliente da carteira.");
+      return;
+    }
+    setLinkSubmitting(true);
+    setLinkError("");
+    try {
+      await onLinkClient(selectedClientId);
+      setLinkingClient(false);
+    } catch (submitError) {
+      setLinkError(submitError instanceof Error ? submitError.message : "Não foi possível vincular o cliente.");
+    } finally {
+      setLinkSubmitting(false);
+    }
+  };
 
   const submitFeature = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -499,11 +562,39 @@ function ConfigurationTab({
         </div>
         <dl className="connect-data-list">
           <div><dt>Nome</dt><dd>{application.name}</dd></div>
-          <div><dt>Cliente</dt><dd>{application.client}</dd></div>
+          <div>
+            <dt>Cliente</dt>
+            <dd className="connect-client-value">
+              <span>{application.clientId && application.client ? `${application.clientId} — ${application.client}` : "Não vinculado"}</span>
+              {!linkingClient && (
+                <button type="button" className="connect-inline-action" onClick={() => setLinkingClient(true)}>Alterar cliente</button>
+              )}
+            </dd>
+          </div>
           <div><dt>Tipo</dt><dd>{applicationTypeLabels[application.type]}</dd></div>
           <div><dt>Application ID</dt><dd><code>{application.id}</code></dd></div>
           <div><dt>Status</dt><dd>{application.status === "connected" ? "Conectado" : "Aguardando integração"}</dd></div>
         </dl>
+        {linkingClient && (
+          <form className="connect-client-link-form" onSubmit={submitClientLink}>
+            <label className="connect-field">
+              <span>{application.clientId ? "Novo cliente relacionado" : "Vincular cliente"}</span>
+              <select required value={selectedClientId} onChange={(event) => setSelectedClientId(event.target.value)}>
+                <option value="">Selecione um cliente da carteira</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>{client.id} — {client.displayName}</option>
+                ))}
+              </select>
+            </label>
+            {linkError && <div className="connect-form-error" role="alert"><WarningCircle size={16} /> {linkError}</div>}
+            <div className="connect-client-link-actions">
+              {application.clientId && <button className="connect-text-button" type="button" onClick={() => setLinkingClient(false)}>Cancelar</button>}
+              <button className="secondary-button connect-button" type="submit" disabled={linkSubmitting}>
+                {linkSubmitting ? "Salvando..." : "Salvar vínculo"}
+              </button>
+            </div>
+          </form>
+        )}
       </section>
 
       <section className="connect-panel connect-feature-panel">

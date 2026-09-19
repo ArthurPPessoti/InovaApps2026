@@ -6,6 +6,7 @@ import { ClientDetailPage } from "./pages/ClientDetailPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { CompanyDetailPage } from "./pages/CompanyDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ProductAnalyticsPage } from "./pages/ProductAnalyticsPage";
 import { SignalsPage } from "./pages/SignalsPage";
 import { DataPage, GeneralClientDetailPage, GeneralDashboardPage } from "./pages/GeneralExperience";
 import { CancelledClientDetailPage, ClientsPage, SurveyPage } from "./pages/RetentionPages";
@@ -26,6 +27,7 @@ function ProtectedApp() {
         <Route path="/empresas/:companyId" element={<CompanyDetailPage />} />
         <Route path="/sinais" element={isTechnology ? <SignalsPage /> : <Navigate to="/" replace />} />
         <Route path="/conexoes" element={isTechnology ? <ConnectionsPage /> : <Navigate to="/dados" replace />} />
+        <Route path="/product-analytics" element={isTechnology ? <ProductAnalyticsPage /> : <Navigate to="/dados" replace />} />
         <Route path="/dados" element={isTechnology ? <Navigate to="/conexoes" replace /> : <DataPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

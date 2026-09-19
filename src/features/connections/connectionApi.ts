@@ -1,6 +1,7 @@
 import type {
   ConnectedApplication,
   IntegrationEvent,
+  LinkApplicationClientInput,
   NewApplicationInput,
   NewFeatureInput,
 } from "./types";
@@ -72,6 +73,14 @@ export async function addFeature(applicationId: string, input: NewFeatureInput) 
   const response = await request<{ application: ConnectedApplication }>(
     `/api/connections/applications/${applicationId}/features`,
     { method: "POST", body: JSON.stringify(input) },
+  );
+  return response.application;
+}
+
+export async function linkApplicationClient(applicationId: string, input: LinkApplicationClientInput) {
+  const response = await request<{ application: ConnectedApplication }>(
+    `/api/connections/applications/${applicationId}/client`,
+    { method: "PATCH", body: JSON.stringify(input) },
   );
   return response.application;
 }

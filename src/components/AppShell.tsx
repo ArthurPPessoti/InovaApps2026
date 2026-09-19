@@ -100,7 +100,7 @@ export function AppShell({ children }: AppShellProps) {
           <ListChecks size={22} weight="duotone" />
           <div>
             <strong>Dados demonstrativos</strong>
-            <span>{account?.profile === "technology" ? "Tracking e scores são mocks." : "Planilha e análises são mocks."}</span>
+            <span>{account?.profile === "technology" ? "Analytics real; demais scores são demonstrativos." : "Planilha e análises são mocks."}</span>
           </div>
         </div>
 

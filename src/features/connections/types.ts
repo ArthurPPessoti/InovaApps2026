@@ -11,7 +11,8 @@ export interface MonitoredFeature {
 export interface ConnectedApplication {
   id: string;
   name: string;
-  client: string;
+  clientId: string | null;
+  client: string | null;
   type: ApplicationType;
   status: IntegrationStatus;
   createdAt: string;
@@ -32,8 +33,14 @@ export interface IntegrationEvent {
 
 export interface NewApplicationInput {
   name: string;
+  clientId: string;
   client: string;
   type: ApplicationType;
+}
+
+export interface LinkApplicationClientInput {
+  clientId: string;
+  client: string;
 }
 
 export interface NewFeatureInput {

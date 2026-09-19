@@ -1,0 +1,69 @@
+.client-telemetry-state {
+  display: flex;
+  min-height: 150px;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 9px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--gray-500);
+  font-size: 10px;
+  text-align: center;
+}
+
+.client-telemetry-state svg {
+  color: var(--cyan-400);
+}
+
+.client-telemetry-state--error {
+  color: var(--red-400);
+}
+
+.client-telemetry-state--error svg {
+  color: var(--red-400);
+}
+
+.client-telemetry-spin {
+  animation: client-telemetry-spin 900ms linear infinite;
+}
+
+@keyframes client-telemetry-spin {
+  to { transform: rotate(360deg); }
+}
+
+.client-telemetry-event > div {
+  min-width: 0;
+}
+
+.client-telemetry-event code {
+  display: block;
+  margin: 3px 0;
+  color: var(--cyan-400);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.client-telemetry-event > small {
+  white-space: nowrap;
+}
+
+.client-telemetry-demo-notice {
+  display: flex;
+  margin-top: 18px;
+  padding: 12px 14px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 186, 73, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--amber-400);
+  background: rgba(255, 186, 73, 0.05);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.client-telemetry-event--demo code {
+  color: var(--amber-400);
+}

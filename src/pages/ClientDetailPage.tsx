@@ -24,6 +24,8 @@ import {
 } from "recharts";
 import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
 import { getCompany, products, watchProducts } from "../data/mockData";
+import { ClientRecentEvents } from "../features/client-telemetry/ClientRecentEvents";
+import { ProductUsageAnalytics } from "../features/product-analytics/ProductUsageAnalytics";
 
 function DetailTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -54,7 +56,7 @@ export function ClientDetailPage() {
   const company = getCompany(client.companyId)!;
 
   const metricCards = [
-    { label: "Uso atual", value: `${client.usage}%`, helper: "do padrão histórico", icon: Gauge },
+    { label: "Uso histórico", value: `${client.usage}%`, helper: "indicador demonstrativo", icon: Gauge },
     { label: "SLA cumprido", value: `${client.sla}%`, helper: "no mês atual", icon: ClockCountdown },
     { label: "NPS", value: client.nps === null ? "Sem resposta" : String(client.nps), helper: client.nps === null ? "pesquisa mais recente" : "última pesquisa", icon: Smiley },
     { label: "Chamados abertos", value: String(client.openTickets), helper: "em acompanhamento", icon: Ticket },
@@ -107,7 +109,7 @@ export function ClientDetailPage() {
       <section className="detail-main-grid">
         <article className="panel trend-panel">
           <div className="panel-heading">
-            <div><span>Últimos seis meses</span><h2>Uso e qualidade do serviço</h2></div>
+            <div><span>Histórico demonstrativo · últimos seis meses</span><h2>Uso e qualidade do serviço</h2></div>
             <div className="chart-legend"><span><i className="legend-dot legend-dot--cyan" /> Uso</span><span><i className="legend-dot legend-dot--blue" /> SLA</span></div>
           </div>
           <div className="detail-chart" aria-label="Evolução de uso e SLA">
@@ -140,8 +142,8 @@ export function ClientDetailPage() {
 
       <section className="panel feature-panel">
         <div className="panel-heading feature-panel-heading">
-          <div><span>Tracking funcional</span><h2>Saúde das funcionalidades</h2></div>
-          <p>Uma função crítica pode gerar atenção mesmo quando o acesso geral permanece estável.</p>
+          <div><span>Saúde demonstrativa</span><h2>Saúde das funcionalidades</h2></div>
+          <p>Indicadores demonstrativos: uma função crítica pode gerar atenção mesmo quando o acesso geral permanece estável.</p>
         </div>
         <div className="features-list">
           {client.features.map((feature) => (
@@ -159,6 +161,8 @@ export function ClientDetailPage() {
         </div>
       </section>
 
+      <ProductUsageAnalytics key={client.id} clientId={client.id} demoEvents={client.events} />
+
       <section className="detail-bottom-grid">
         <article className="panel">
           <div className="panel-heading"><div><span>Evidências</span><h2>Linha do tempo de sinais</h2></div></div>
@@ -173,16 +177,8 @@ export function ClientDetailPage() {
         </article>
 
         <article className="panel">
-          <div className="panel-heading"><div><span>Telemetria</span><h2>Eventos recentes</h2></div></div>
-          <div className="event-list">
-            {client.events.map((event) => (
-              <div key={event.id} className="event-item">
-                <span className={`event-result event-result--${event.result.toLowerCase()}`} aria-hidden="true" />
-                <div><strong>{event.action}</strong><span>{event.feature} · {event.context}</span></div>
-                <small>{event.timestamp}</small>
-              </div>
-            ))}
-          </div>
+          <div className="panel-heading"><div><span>Evidências do produto</span><h2>Eventos recentes</h2></div></div>
+          <ClientRecentEvents clientId={client.id} demoEvents={client.events} />
         </article>
       </section>
 
