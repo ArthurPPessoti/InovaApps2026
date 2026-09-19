@@ -6,6 +6,8 @@ import { ClientDetailPage } from "./pages/ClientDetailPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { CompanyDetailPage } from "./pages/CompanyDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ManagementPage } from "./pages/ManagementPage";
+import { PredictionsPage } from "./pages/PredictionsPage";
 import { ProductAnalyticsPage } from "./pages/ProductAnalyticsPage";
 import { SignalsPage } from "./pages/SignalsPage";
 import { DataPage, GeneralClientDetailPage, GeneralDashboardPage } from "./pages/GeneralExperience";
@@ -25,6 +27,8 @@ function ProtectedApp() {
         <Route path="/clientes/cancelados/:clienteId" element={<CancelledClientDetailPage />} />
         <Route path="/clientes/:clienteId" element={isTechnology ? <ClientDetailPage /> : <GeneralClientDetailPage />} />
         <Route path="/empresas/:companyId" element={<CompanyDetailPage />} />
+        <Route path="/previsoes" element={<PredictionsPage />} />
+        <Route path="/gestao" element={<ManagementPage />} />
         <Route path="/sinais" element={isTechnology ? <SignalsPage /> : <Navigate to="/" replace />} />
         <Route path="/conexoes" element={isTechnology ? <ConnectionsPage /> : <Navigate to="/dados" replace />} />
         <Route path="/product-analytics" element={isTechnology ? <ProductAnalyticsPage /> : <Navigate to="/dados" replace />} />

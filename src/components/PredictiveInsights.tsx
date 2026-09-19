@@ -74,7 +74,7 @@ function BubbleTooltip({ active, payload }: { active?: boolean; payload?: Array<
 
 const bubbleColor = { Alto: "#ff6b78", Médio: "#ffba49", Baixo: "#00f3ff" } as const;
 
-export function PredictiveInsights({ profile }: { profile: CompanyProfile }) {
+export function PredictiveInsights({ profile, mode = "overview" }: { profile: CompanyProfile; mode?: "overview" | "details" }) {
   const [recoveryRate, setRecoveryRate] = useState(50);
   const savedRevenue = 74000 * recoveryRate / 100;
   const avoidedLosses = 4 * recoveryRate / 100;
@@ -82,13 +82,13 @@ export function PredictiveInsights({ profile }: { profile: CompanyProfile }) {
   const trackedLabel = profile === "technology" ? "funcionalidades" : "indicadores da base";
 
   return (
-    <section id="previsoes" className="predictive-section" aria-labelledby="predictive-title">
-      <header className="section-heading predictive-heading">
+    <section id={mode === "overview" ? "previsoes" : undefined} className={`predictive-section predictive-section--${mode}`} aria-label={mode === "details" ? "Análises preditivas detalhadas" : undefined} aria-labelledby={mode === "overview" ? "predictive-title" : undefined}>
+      {mode === "overview" && <header className="section-heading predictive-heading">
         <div><span><MagicWand size={15} weight="fill" /> Cenários preditivos</span><h2 id="predictive-title">Se o comportamento continuar, o que pode acontecer?</h2></div>
         <p>Estimativas demonstrativas para apoiar decisões. Faixas futuras não representam probabilidades calculadas por um modelo real.</p>
-      </header>
+      </header>}
 
-      <article className="panel forecast-revenue-panel">
+      {mode === "overview" && <article className="panel forecast-revenue-panel">
         <div className="panel-heading"><div><span>Próximos seis meses</span><h2>Projeção da receita recorrente</h2><p>A distância entre os cenários representa até <strong>R$ 342 mil</strong> de receita mensal preservável no horizonte.</p></div><span className="forecast-confidence">Confiança demonstrativa · média</span></div>
         <div className="forecast-chart" aria-label="Receita recorrente real e projetada em três cenários">
           <ResponsiveContainer width="100%" height="100%"><AreaChart data={revenueForecast} margin={{ top: 18, right: 18, left: 0, bottom: 0 }}>
@@ -101,35 +101,35 @@ export function PredictiveInsights({ profile }: { profile: CompanyProfile }) {
           </AreaChart></ResponsiveContainer>
         </div>
         <div className="forecast-legend"><span><i className="real" />Real</span><span><i className="no-action" />Sem ação</span><span><i className="expected" />Esperado</span><span><i className="with-action" />Com ação</span></div>
-      </article>
+      </article>}
 
-      <div id="matriz-preditiva" className="predictive-grid">
-        <article className="panel risk-value-panel">
+      <div id={mode === "overview" ? "matriz-preditiva" : undefined} className={`predictive-grid predictive-grid--${mode}`}>
+        {mode === "overview" && <article className="panel risk-value-panel">
           <div className="panel-heading"><div><span>Decisão</span><h2>Risco × impacto financeiro</h2><p>O tamanho da bolha representa a receita do produto.</p></div></div>
           <div className="predictive-chart"><ResponsiveContainer width="100%" height="100%"><ScatterChart margin={{ top: 12, right: 18, bottom: 10, left: 0 }}><CartesianGrid stroke="rgba(255,255,255,.07)" /><XAxis type="number" dataKey="risk" name="Risco" domain={[0, 100]} tick={{ fill: "#8593ae", fontSize: 11 }} label={{ value: "Risco →", position: "insideBottomRight", fill: "#8593ae", offset: -4 }} /><YAxis type="number" dataKey="impact" name="Impacto" tick={{ fill: "#8593ae", fontSize: 11 }} label={{ value: "Impacto", angle: -90, position: "insideLeft", fill: "#8593ae" }} /><ZAxis type="number" dataKey="revenue" range={[90, 600]} /><Tooltip content={<BubbleTooltip />} /><Scatter data={riskValue}>{riskValue.map((item) => <Cell key={`${item.company}-${item.name}`} fill={bubbleColor[item.level]} fillOpacity={0.78} />)}</Scatter></ScatterChart></ResponsiveContainer></div>
-        </article>
+        </article>}
 
-        <article className="panel transition-panel">
+        {mode === "details" && <article className="panel transition-panel">
           <div className="panel-heading"><div><span>Movimento da carteira</span><h2>Migração prevista em 90 dias</h2><p>Sete produtos podem deixar a faixa saudável sem intervenção.</p></div></div>
           <div className="predictive-chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={transitionForecast} margin={{ top: 12, right: 8, left: -20, bottom: 0 }}><CartesianGrid stroke="rgba(255,255,255,.07)" vertical={false} /><XAxis dataKey="period" tick={{ fill: "#b9b9b9", fontSize: 11 }} axisLine={false} tickLine={false} /><YAxis tick={{ fill: "#8593ae", fontSize: 11 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: "rgba(255,255,255,.03)" }} /><Bar isAnimationActive={false} dataKey="healthy" name="Saudável" stackId="portfolio" fill="#00f3ff" radius={[0, 0, 6, 6]} /><Bar isAnimationActive={false} dataKey="attention" name="Atenção" stackId="portfolio" fill="#ffba49" /><Bar isAnimationActive={false} dataKey="high" name="Alto" stackId="portfolio" fill="#ff6b78" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div>
           <div className="migration-callout"><TrendDown size={18} /><span><strong>+3 produtos em risco alto</strong><small>cenário demonstrativo sem ação</small></span></div>
-        </article>
+        </article>}
 
-        <article className="panel trajectory-panel">
+        {mode === "details" && <article className="panel trajectory-panel">
           <div className="panel-heading"><div><span>Trajetória</span><h2>Risco projetado por produto</h2><p>A direção da curva importa mais que uma data exata de saída.</p></div></div>
           <div className="predictive-chart"><ResponsiveContainer width="100%" height="100%"><LineChart data={riskTrajectories} margin={{ top: 12, right: 12, left: -20, bottom: 0 }}><CartesianGrid stroke="rgba(255,255,255,.07)" vertical={false} /><XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 11 }} /><YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 11 }} /><Tooltip /><Line isAnimationActive={false} dataKey="pesagem" name="Pesagem · Atlas" stroke="#ff6b78" strokeWidth={3} /><Line isAnimationActive={false} dataKey="suporte" name="Suporte · Horizonte" stroke="#ff9f68" strokeWidth={2.5} /><Line isAnimationActive={false} dataKey="rpa" name="RPA · Prisma" stroke="#ffba49" strokeWidth={2.5} /><Line isAnimationActive={false} dataKey="analytics" name="Analytics · Atlas" stroke="#00f3ff" strokeWidth={2.5} /></LineChart></ResponsiveContainer></div>
-        </article>
+        </article>}
 
-        <article className="panel feature-forecast-panel">
+        {mode === "details" && <article className="panel feature-forecast-panel">
           <div className="panel-heading"><div><span>Risco silencioso</span><h2>Queda prevista em {trackedLabel}</h2><p>Uso atual comparado ao cenário estimado para 30 dias.</p></div></div>
           <div className="predictive-chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={featureForecast} layout="vertical" margin={{ top: 6, right: 10, left: 24, bottom: 0 }}><CartesianGrid stroke="rgba(255,255,255,.06)" horizontal={false} /><XAxis type="number" domain={[0, 100]} tick={{ fill: "#8593ae", fontSize: 10 }} axisLine={false} tickLine={false} /><YAxis type="category" dataKey="name" width={115} tick={{ fill: "#b9b9b9", fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: "rgba(255,255,255,.03)" }} /><Bar isAnimationActive={false} dataKey="current" name="Atual" fill="#0156fc" radius={[0, 6, 6, 0]} barSize={9} /><Bar isAnimationActive={false} dataKey="projected" name="Em 30 dias" fill="#ff6b78" radius={[0, 6, 6, 0]} barSize={9} /></BarChart></ResponsiveContainer></div>
-        </article>
+        </article>}
       </div>
 
-      <article id="simulador" className="simulation-panel">
+      {mode === "overview" && <article id="simulador" className="simulation-panel">
         <div className="simulation-copy"><span className="eyebrow"><ChartLineUp size={16} /> Simulador de intervenção</span><h2>E se recuperarmos {recoveryRate}% dos produtos em risco alto?</h2><p>Movimente o controle para comparar o impacto potencial de uma ação coordenada.</p><label htmlFor="recovery-rate">Taxa de recuperação simulada<strong>{recoveryRate}%</strong></label><input id="recovery-rate" type="range" min="0" max="100" step="10" value={recoveryRate} onChange={(event) => setRecoveryRate(Number(event.target.value))} /></div>
         <div className="simulation-results"><div><CurrencyCircleDollar size={21} /><small>Receita mensal preservada</small><strong>{formatCurrency(savedRevenue)}</strong></div><div><ShieldWarning size={21} /><small>Cancelamentos evitados</small><strong>{avoidedLosses.toFixed(1)}</strong></div><div><TrendDown size={21} /><small>Risco médio projetado</small><strong>{projectedRisk}</strong></div></div>
-      </article>
+      </article>}
     </section>
   );
 }

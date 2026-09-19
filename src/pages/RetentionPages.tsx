@@ -12,6 +12,7 @@ import {
   Gift,
   GoogleLogo,
   Lightbulb,
+  Plus,
   TrendDown,
   UsersThree,
   WarningCircle,
@@ -19,8 +20,10 @@ import {
 import { type FormEvent, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { AddClientSheet } from "../components/AddClientSheet";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
-import { attentionCompanies, companyPortfolioSummary, getCompany, portfolioProducts, productPortfolioSummary } from "../data/mockData";
+import { type RegisteredClient, useRegisteredClients } from "../data/clientRegistry";
+import { attentionCompanies, companies, companyPortfolioSummary, getCompany, portfolioProducts, productPortfolioSummary } from "../data/mockData";
 import {
   cancellationReasons,
   cancelledClients,
@@ -39,8 +42,27 @@ const statusLabel: Record<SurveyStatus, string> = {
   responded: "Respondida",
 };
 
-function ActiveClients({ attentionOnly, view }: { attentionOnly: boolean; view: "produtos" | "empresas" }) {
+const clientSegments = [...new Set(companies.map((company) => company.segment))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+function NewClientRow({ client, view }: { client: RegisteredClient; view: "produtos" | "empresas" }) {
+  return (
+    <tr className="new-client-row">
+      <td>
+        <strong>{view === "produtos" ? client.productName : client.companyName} <span className="new-badge">Novo</span></strong>
+        <small>{view === "produtos" ? `${client.companyName} · ${client.plan}` : `1 produto(s) · ${client.owner}`}</small>
+      </td>
+      <td>{client.segment}</td>
+      <td><span className="no-data-badge">Sem dados ainda</span></td>
+      <td className="revenue-cell">{formatCurrency(client.monthlyRevenue)}</td>
+      <td className="signal-cell">Aguardando primeiros dados</td>
+      <td><span className="table-note">Detalhe após os primeiros dados</span></td>
+    </tr>
+  );
+}
+
+function ActiveClients({ attentionOnly, view, onViewChange, registered }: { attentionOnly: boolean; view: "produtos" | "empresas"; onViewChange: (view: "produtos" | "empresas") => void; registered: RegisteredClient[] }) {
   const { account } = useAuth();
+  const newClients = attentionOnly ? [] : registered;
   const visibleProducts = attentionOnly ? portfolioProducts.filter((product) => product.riskLevel !== "Baixo") : portfolioProducts;
   const visibleCompanies = attentionOnly ? attentionCompanies : attentionCompanies;
 
@@ -52,11 +74,18 @@ function ActiveClients({ attentionOnly, view }: { attentionOnly: boolean; view: 
           <h2>{attentionOnly ? `${view === "produtos" ? "Produtos" : "Empresas"} que exigem atenção` : `${view === "produtos" ? "Produtos" : "Empresas"} com contrato ativo`}</h2>
           <p>{view === "produtos" ? `${visibleProducts.length} exemplos de ${productPortfolioSummary.activeProducts} produtos ativos` : `${visibleCompanies.length} exemplos de ${companyPortfolioSummary.activeCompanies} empresas ativas`}</p>
         </div>
+        <div className="panel-tools">
+          <span id="group-label">Agrupar</span>
+          <div className="view-toggle view-toggle--compact" role="group" aria-labelledby="group-label">
+            <button type="button" className={view === "produtos" ? "active" : ""} aria-pressed={view === "produtos"} onClick={() => onViewChange("produtos")}>Produto</button>
+            <button type="button" className={view === "empresas" ? "active" : ""} aria-pressed={view === "empresas"} onClick={() => onViewChange("empresas")}>Empresa</button>
+          </div>
+        </div>
       </div>
       <div className="table-scroll">
         <table className="clients-table lifecycle-table">
           <thead><tr><th>{view === "produtos" ? "Produto / empresa" : "Empresa"}</th><th>Segmento</th><th>Risco</th><th>Receita mensal</th><th>Evidência atual</th><th>Ação</th></tr></thead>
-          <tbody>{view === "produtos" ? visibleProducts.map((product) => { const company = getCompany(product.companyId)!; return (
+          <tbody>{newClients.map((client) => <NewClientRow key={client.id} client={client} view={view} />)}{view === "produtos" ? visibleProducts.map((product) => { const company = getCompany(product.companyId)!; return (
             <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small></td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{account?.profile === "technology" ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
           ); }) : visibleCompanies.map((portfolio) => <tr key={portfolio.company.id}><td><strong>{portfolio.company.name}</strong><small>{portfolio.products.length} produto(s) · {portfolio.company.owner}</small></td><td>{portfolio.company.segment}</td><td><RiskBadge level={portfolio.riskLevel} score={portfolio.riskScore} /></td><td>{formatCurrency(portfolio.monthlyRevenue)}</td><td className="signal-cell">{portfolio.criticalAlert ? `${portfolio.criticalAlert.productName}: ${portfolio.criticalAlert.primarySignal}` : portfolio.products[0]?.primarySignal}</td><td><Link className="table-action" to={`/empresas/${portfolio.company.id}`}>Ver empresa <ArrowRight size={14} /></Link></td></tr>)}</tbody>
         </table>
@@ -123,19 +152,38 @@ export function ClientsPage() {
   const tab = (searchParams.get("status") as ClientTab | null) ?? "atencao";
   const view = searchParams.get("visao") === "empresas" ? "empresas" : "produtos";
   const setParam = (key: string, value: string, defaultValue: string) => { const next = new URLSearchParams(searchParams); if (value === defaultValue) next.delete(key); else next.set(key, value); setSearchParams(next, { replace: true }); };
+  const { account } = useAuth();
+  const registered = useRegisteredClients();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [addedMessage, setAddedMessage] = useState("");
+
+  const handleSaved = (client: RegisteredClient) => {
+    setSheetOpen(false);
+    setAddedMessage(`${client.companyName} foi adicionada à carteira ativa.`);
+    setParam("status", "ativos", "atencao");
+  };
 
   return (
     <div className="clients-lifecycle-page">
       <header className="page-heading">
         <div><span className="eyebrow"><Buildings size={16} weight="duotone" /> Ciclo de relacionamento</span><h1>Clientes antes, durante e depois do risco.</h1><p>Acompanhe quem precisa de atenção e transforme cancelamentos em aprendizado para a carteira ativa.</p></div>
+        <button type="button" className="primary-button" onClick={() => setSheetOpen(true)}><Plus size={17} weight="bold" /> Adicionar cliente</button>
       </header>
-      {tab !== "cancelados" && <div className="view-toggle lifecycle-view-toggle" role="group" aria-label="Agrupar carteira"><button type="button" className={view === "produtos" ? "active" : ""} onClick={() => setParam("visao", "produtos", "produtos")}>Por produto</button><button type="button" className={view === "empresas" ? "active" : ""} onClick={() => setParam("visao", "empresas", "produtos")}>Por empresa</button></div>}
       <div className="lifecycle-tabs" role="tablist" aria-label="Situação dos clientes">
-        <button type="button" role="tab" aria-selected={tab === "ativos"} className={tab === "ativos" ? "active" : ""} onClick={() => setParam("status", "ativos", "atencao")}>Ativos <span>{view === "produtos" ? productPortfolioSummary.activeProducts : companyPortfolioSummary.activeCompanies}</span></button>
+        <button type="button" role="tab" aria-selected={tab === "ativos"} className={tab === "ativos" ? "active" : ""} onClick={() => setParam("status", "ativos", "atencao")}>Ativos <span>{(view === "produtos" ? productPortfolioSummary.activeProducts : companyPortfolioSummary.activeCompanies) + registered.length}</span></button>
         <button type="button" role="tab" aria-selected={tab === "atencao"} className={tab === "atencao" ? "active" : ""} onClick={() => setParam("status", "atencao", "atencao")}>Em atenção <span>{view === "produtos" ? productPortfolioSummary.attentionProducts : companyPortfolioSummary.attentionCompanies}</span></button>
         <button type="button" role="tab" aria-selected={tab === "cancelados"} className={tab === "cancelados" ? "active" : ""} onClick={() => setParam("status", "cancelados", "atencao")}>Cancelados <span>{cancelledClients.length}</span></button>
       </div>
-      {tab === "cancelados" ? <CancelledClients /> : <ActiveClients attentionOnly={tab === "atencao"} view={view} />}
+      <p className="client-added" role="status">{addedMessage && <><CheckCircle size={16} weight="fill" /> {addedMessage}</>}</p>
+      {tab === "cancelados" ? <CancelledClients /> : <ActiveClients attentionOnly={tab === "atencao"} view={view} onViewChange={(next) => setParam("visao", next, "produtos")} registered={registered} />}
+      <AddClientSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onSaved={handleSaved}
+        segments={clientSegments}
+        existingNames={[...companies.map((company) => company.name), ...registered.map((client) => client.companyName)]}
+        requireExternalId={account?.profile === "technology"}
+      />
     </div>
   );
 }

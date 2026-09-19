@@ -1,9 +1,10 @@
 import {
   BellSimple,
-  ChartBar,
+  Briefcase,
   ChartLineUp,
   FileXls,
   ListChecks,
+  MagicWand,
   PlugsConnected,
   Pulse,
   SignOut,
@@ -21,6 +22,8 @@ interface AppShellProps {
 
 const technologyNav = [
   { label: "Visão geral", to: "/#resumo", hash: "#resumo", icon: ChartLineUp },
+  { label: "Previsões", to: "/previsoes", icon: MagicWand },
+  { label: "Gestão", to: "/gestao", icon: Briefcase },
   { label: "Clientes", to: "/clientes", icon: UsersThree },
   { label: "Sinais", to: "/sinais", icon: Pulse },
   { label: "Conexões", to: "/conexoes", icon: PlugsConnected },
@@ -29,7 +32,8 @@ const technologyNav = [
 const generalNav = [
   { label: "Visão geral", to: "/#resumo", hash: "#resumo", icon: ChartLineUp },
   { label: "Dados", to: "/dados", icon: FileXls },
-  { label: "Análises", to: "/#analises", hash: "#analises", icon: ChartBar },
+  { label: "Previsões", to: "/previsoes", icon: MagicWand },
+  { label: "Gestão", to: "/gestao", icon: Briefcase },
   { label: "Clientes", to: "/clientes", icon: UsersThree },
 ];
 
@@ -128,7 +132,7 @@ export function AppShell({ children }: AppShellProps) {
               className="icon-button"
               type="button"
               aria-label="Ver sinais de atenção"
-              onClick={() => navigate(account?.profile === "technology" ? "/sinais" : "/#analises")}
+              onClick={() => navigate(account?.profile === "technology" ? "/sinais" : "/previsoes")}
             >
               <BellSimple size={20} />
               <span className="notification-dot" aria-hidden="true" />

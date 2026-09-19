@@ -183,3 +183,40 @@ export interface PortfolioPoint {
   medio: number;
   baixo: number;
 }
+
+export type RetentionCaseStage = "detected" | "contacted" | "in_progress" | "recovered";
+
+export interface RetentionCase {
+  id: string;
+  productId: string;
+  title: string;
+  owner: string;
+  dueDate: string;
+  stage: RetentionCaseStage;
+  note: string;
+  createdAt: string;
+  dataSource: DataSource;
+}
+
+export interface RenewalMock {
+  id: string;
+  productId: string;
+  dueInDays: 30 | 60 | 90;
+  renewalDate: string;
+  hasPlan: boolean;
+  dataSource: DataSource;
+}
+
+export interface ManagementFinancialPoint {
+  month: string;
+  atRisk: number;
+  recovered: number;
+  lost: number;
+}
+
+export interface PortfolioHealthPoint {
+  month: string;
+  score: number;
+  target: number;
+  event?: string;
+}
