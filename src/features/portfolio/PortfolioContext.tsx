@@ -13,6 +13,7 @@ import {
   productTelemetryFor,
   type ProductTelemetrySummary,
 } from "./productTelemetry";
+import type { ProductRiskProfile } from "./productRisk";
 
 export interface PersistedPortfolioCompany {
   id: string;
@@ -44,6 +45,7 @@ export interface PortfolioProductRecord {
   mockData: ProductContractMock | null;
   createdAt: string | null;
   telemetry: ProductTelemetrySummary;
+  riskProfile: ProductRiskProfile | null;
 }
 
 interface PortfolioCatalog {
@@ -65,6 +67,7 @@ interface PersistedPortfolioResponse {
   companies: PersistedPortfolioCompany[];
   products: PersistedPortfolioProduct[];
   telemetryByProduct?: Record<string, ProductTelemetrySummary>;
+  riskByProduct?: Record<string, ProductRiskProfile>;
 }
 
 const mockClientProductIds = new Set(portfolioProducts.map((product) => product.id));
@@ -80,6 +83,7 @@ export function normalizePortfolioName(value: string) {
 
 function mergePortfolio(response: PersistedPortfolioResponse): PortfolioCatalog {
   const telemetryFor = (productId: string) => productTelemetryFor(response.telemetryByProduct, productId);
+  const riskFor = (productId: string) => response.riskByProduct?.[productId] ?? null;
   const companyRecords: PortfolioCompanyRecord[] = companies.map((company) => ({
     id: company.id,
     name: company.name,
@@ -108,6 +112,7 @@ function mergePortfolio(response: PersistedPortfolioResponse): PortfolioCatalog 
     mockData: product,
     createdAt: null,
     telemetry: telemetryFor(product.id),
+    riskProfile: null,
   }));
   const productIds = new Set(productRecords.map((product) => product.id));
   response.products.forEach((product) => {
@@ -118,6 +123,7 @@ function mergePortfolio(response: PersistedPortfolioResponse): PortfolioCatalog 
       source: "persisted",
       mockData: null,
       telemetry: telemetryFor(product.id),
+      riskProfile: riskFor(product.id),
     });
   });
 
@@ -130,7 +136,7 @@ function mergePortfolio(response: PersistedPortfolioResponse): PortfolioCatalog 
   };
 }
 
-const initialCatalog = mergePortfolio({ companies: [], products: [], telemetryByProduct: {} });
+const initialCatalog = mergePortfolio({ companies: [], products: [], telemetryByProduct: {}, riskByProduct: {} });
 const PortfolioContext = createContext<PortfolioContextValue | null>(null);
 
 export function PortfolioProvider({ children }: { children: ReactNode }) {

@@ -27,6 +27,7 @@ import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
 import { getCompany, products, watchProducts } from "../data/mockData";
 import { ClientRecentEvents } from "../features/client-telemetry/ClientRecentEvents";
 import { type PortfolioProductRecord, usePortfolio } from "../features/portfolio/PortfolioContext";
+import { ProductRiskProfilePanel } from "../features/portfolio/ProductRiskProfilePanel";
 import { ProductUsageAnalytics } from "../features/product-analytics/ProductUsageAnalytics";
 
 function DetailTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
@@ -202,6 +203,7 @@ export function ClientDetailPage() {
 }
 
 function PersistedProductDetail({ product, backTarget, hasTechnology }: { product: PortfolioProductRecord; backTarget: string; hasTechnology: boolean }) {
+  const riskProfile = product.riskProfile;
   return (
     <div className="client-detail-page">
       <Link className="back-link" to={backTarget}><ArrowLeft size={18} /> Voltar à carteira</Link>
@@ -212,25 +214,30 @@ function PersistedProductDetail({ product, backTarget, hasTechnology }: { produc
           <div className="client-title-row">
             <div>
               <h1>{product.productName}</h1>
-              <p><Link to={`/empresas/${product.companyId}`}>{product.companyName}</Link> · Dados comerciais ainda não informados</p>
+              <p><Link to={`/empresas/${product.companyId}`}>{product.companyName}</Link> · {riskProfile ? `${riskProfile.segment} · ${riskProfile.plan}` : "Dados comerciais ainda não informados"}</p>
             </div>
+            {riskProfile && <RiskBadge level={riskProfile.riskLevel} score={riskProfile.riskScore} />}
           </div>
         </div>
         <div className="client-value">
           <span>Receita mensal</span>
-          <strong>Não informado</strong>
-          <small>Aguardando fonte comercial</small>
+          <strong>{riskProfile ? formatCurrency(riskProfile.monthlyRevenue) : "Não informado"}</strong>
+          <small>{riskProfile ? (riskProfile.source === "demo" ? "Dado demonstrativo" : "Dado cadastrado") : "Aguardando fonte comercial"}</small>
         </div>
       </section>
 
       <section className="explanation-panel">
         <div className="explanation-icon"><Lightbulb size={25} weight="duotone" /></div>
         <div>
-          <span>Estado inicial</span>
-          <h2>{hasTechnology ? "Produto cadastrado e pronto para receber telemetria" : "Produto cadastrado e aguardando dados comerciais"}</h2>
-          <p>Risco, score, SLA, NPS, receita e histórico não foram inventados. Esses indicadores permanecerão sem dados até serem fornecidos por suas fontes adequadas.</p>
+          <span>{riskProfile ? "Classificação explicável" : "Estado inicial"}</span>
+          <h2>{riskProfile ? riskProfile.primarySignal : hasTechnology ? "Produto cadastrado e pronto para receber telemetria" : "Produto cadastrado e aguardando dados comerciais"}</h2>
+          <p>{riskProfile
+            ? `Score calculado pela regra operacional v1 com SLA, NPS, chamados e atraso informados. A telemetria de uso abaixo permanece descritiva e não altera essa classificação.${riskProfile.source === "demo" ? " Os valores do NexStock são demonstrativos." : ""}`
+            : "Risco, score, SLA, NPS e receita não foram inventados. Cadastre os dados comerciais e operacionais para gerar uma classificação independente da telemetria."}</p>
         </div>
       </section>
+
+      <ProductRiskProfilePanel product={product} />
 
       {hasTechnology && <ProductUsageAnalytics key={product.id} clientId={product.id} demoEvents={[]} />}
 
@@ -240,7 +247,7 @@ function PersistedProductDetail({ product, backTarget, hasTechnology }: { produc
       </section>}
 
       <footer className="mock-footer">
-        <UsersThree size={18} /> Produto de {product.companyName}. Cadastro persistido; dados comerciais ainda não informados.
+        <UsersThree size={18} /> Produto de {product.companyName}. {riskProfile?.source === "demo" ? "Perfil comercial demonstrativo e telemetria isolada deste produto." : "Cadastro persistido; classificação baseada somente nos dados explicitamente informados."}
       </footer>
     </div>
   );

@@ -3,7 +3,10 @@ import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { handleApi } from "./connections-api.mjs";
+import { ensureShowcaseDemo, handleApi } from "./connections-api.mjs";
+import { ensureProductRiskSchema } from "./product-risk.mjs";
+
+const NOW = new Date("2026-09-19T15:00:00.000Z");
 
 function createDatabase({ legacyTypeColumn = false } = {}) {
   const database = new DatabaseSync(":memory:");
@@ -60,6 +63,7 @@ function createDatabase({ legacyTypeColumn = false } = {}) {
       ON connection_applications(client_id)
       WHERE client_id IS NOT NULL;
   `);
+  ensureProductRiskSchema(database);
   return database;
 }
 
@@ -96,6 +100,106 @@ async function apiRequest(baseUrl, path, { method = "GET", body, credential } = 
   });
   return { status: response.status, body: await response.json() };
 }
+
+test("bootstrap disponibiliza NexStock completo e idempotente em uma instalação nova", () => {
+  const database = createDatabase();
+  const encryptionKey = randomBytes(32);
+  const first = ensureShowcaseDemo(database, encryptionKey, { now: NOW });
+  const second = ensureShowcaseDemo(database, encryptionKey, { now: NOW });
+
+  assert.equal(first.productId, "product_f3bede39f94b");
+  assert.equal(first.applicationId, "app_nexstockdemo");
+  assert.deepEqual(first.created, { company: true, product: true, application: true, features: 3, riskProfile: true });
+  assert.deepEqual(second.created, { company: false, product: false, application: false, features: 0, riskProfile: false });
+  assert.equal(second.seed.inserted, 0);
+  assert.equal(second.seed.totalDemoEvents, first.seed.totalDemoEvents);
+  assert.deepEqual(
+    database.prepare(`
+      SELECT name, event_name AS eventName
+      FROM connection_features
+      WHERE application_id = ?
+      ORDER BY created_at ASC
+    `).all(first.applicationId).map((row) => ({ ...row })),
+    [
+      { name: "Consulta de estoque", eventName: "estoque_consultado" },
+      { name: "Cadastro de produto", eventName: "produto_cadastrado" },
+      { name: "Geração de relatório", eventName: "relatorio_gerado" },
+    ],
+  );
+  assert.deepEqual(
+    { ...database.prepare(`
+      SELECT name, company_name AS companyName
+      FROM portfolio_products
+      WHERE id = ?
+    `).get(first.productId) },
+    { name: "NexStock — Gestão de Estoque", companyName: "Nexora Distribuição" },
+  );
+  assert.ok(first.seed.totalDemoEvents > 0);
+  const portfolioRisk = database.prepare(`
+    SELECT source, plan FROM portfolio_product_risk_profiles WHERE product_id = ?
+  `).get(first.productId);
+  assert.deepEqual({ ...portfolioRisk }, { source: "demo", plan: "Enterprise" });
+  database.close();
+});
+
+test("perfil comercial classifica somente o produto informado", async (context) => {
+  const database = createDatabase();
+  database.prepare(`
+    INSERT INTO portfolio_companies (id, name, normalized_name, created_at)
+    VALUES ('company_test', 'Empresa teste', 'empresa teste', ?)
+  `).run(NOW.toISOString());
+  const insertProduct = database.prepare(`
+    INSERT INTO portfolio_products (id, company_id, company_name, name, normalized_name, created_at)
+    VALUES (?, 'company_test', 'Empresa teste', ?, ?, ?)
+  `);
+  insertProduct.run("product_one", "Produto um", "produto um", NOW.toISOString());
+  insertProduct.run("product_two", "Produto dois", "produto dois", NOW.toISOString());
+
+  const api = await startApi(database);
+  context.after(async () => {
+    await api.close();
+    database.close();
+  });
+
+  const saved = await apiRequest(api.baseUrl, "/api/portfolio/products/product_one/risk-profile", {
+    method: "PUT",
+    body: {
+      segment: "Logística",
+      plan: "Enterprise",
+      monthlyRevenue: 25_000,
+      slaPercent: 76,
+      nps: 5,
+      openTickets: 6,
+      criticalTickets: 2,
+      paymentDelayDays: 12,
+    },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.riskProfile.productId, "product_one");
+  assert.equal(saved.body.riskProfile.source, "manual");
+  assert.equal(saved.body.riskProfile.riskLevel, "Médio");
+
+  const portfolio = await apiRequest(api.baseUrl, "/api/portfolio");
+  assert.deepEqual(Object.keys(portfolio.body.riskByProduct), ["product_one"]);
+  assert.equal(portfolio.body.riskByProduct.product_one.monthlyRevenue, 25_000);
+  assert.equal(portfolio.body.riskByProduct.product_two, undefined);
+
+  const invalid = await apiRequest(api.baseUrl, "/api/portfolio/products/product_two/risk-profile", {
+    method: "PUT",
+    body: {
+      segment: "Logística",
+      plan: "Básico",
+      monthlyRevenue: 1_000,
+      slaPercent: 90,
+      nps: 8,
+      openTickets: 1,
+      criticalTickets: 2,
+      paymentDelayDays: 0,
+    },
+  });
+  assert.equal(invalid.status, 400);
+  assert.equal(portfolio.body.riskByProduct.product_two, undefined);
+});
 
 test("conecta produto sem nome independente e preserva telemetria, credencial, vínculo e usuários", async (context) => {
   const database = createDatabase();

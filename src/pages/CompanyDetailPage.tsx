@@ -58,7 +58,8 @@ export function CompanyDetailPage() {
 }
 
 function PersistedCompanyProductRow({ product, from, hasTechnology }: { product: PortfolioProductRecord; from: string; hasTechnology: boolean }) {
-  return <tr><td><strong>{product.productName}</strong><small>Dados comerciais não informados</small></td><td>Sem dados</td><td>Não informado</td><td>Não informado</td>{hasTechnology && <td>Sem dados</td>}<td>—</td><td>—</td><td><Link className="table-action" to={`/clientes/${product.id}`} state={{ from }}>Ver produto <ArrowRight size={14} /></Link></td></tr>;
+  const risk = product.riskProfile;
+  return <tr><td><strong>{product.productName}</strong><small>{risk ? `${risk.plan} · ${risk.segment}${risk.source === "demo" ? " · Exemplo" : ""}` : "Dados comerciais não informados"}</small></td><td>{risk ? <RiskBadge level={risk.riskLevel} score={risk.riskScore} /> : "Sem dados"}</td><td>{risk ? formatCurrency(risk.monthlyRevenue) : "Não informado"}</td><td>Não informado</td>{hasTechnology && <td>Sem dados</td>}<td>—</td><td>—</td><td><Link className="table-action" to={`/clientes/${product.id}`} state={{ from }}>Ver produto <ArrowRight size={14} /></Link></td></tr>;
 }
 
 function PersistedCompanyDetail({
@@ -72,16 +73,18 @@ function PersistedCompanyDetail({
   backTarget: string;
   hasTechnology: boolean;
 }) {
+  const classifiedProducts = products.filter((product) => product.riskProfile);
+  const informedRevenue = classifiedProducts.reduce((total, product) => total + (product.riskProfile?.monthlyRevenue ?? 0), 0);
   return (
     <div className="company-detail-page">
       <Link className="back-link" to={backTarget}><ArrowLeft size={18} /> Voltar à visão por empresa</Link>
       <section className="client-hero">
-        <div className="client-heading"><span className="eyebrow"><Buildings size={16} weight="duotone" /> Conta consolidada</span><div className="client-title-row"><div><h1>{company.name}</h1><p>Dados comerciais ainda não informados</p></div></div></div>
-        <div className="client-value"><span>Receita mensal total</span><strong>Não informado</strong><small>{products.length} {products.length === 1 ? "produto cadastrado" : "produtos cadastrados"}</small></div>
+        <div className="client-heading"><span className="eyebrow"><Buildings size={16} weight="duotone" /> Conta consolidada</span><div className="client-title-row"><div><h1>{company.name}</h1><p>{classifiedProducts.length ? `${classifiedProducts.length} de ${products.length} produto(s) com dados comerciais` : "Dados comerciais ainda não informados"}</p></div></div></div>
+        <div className="client-value"><span>Receita mensal informada</span><strong>{classifiedProducts.length ? formatCurrency(informedRevenue) : "Não informado"}</strong><small>{products.length} {products.length === 1 ? "produto cadastrado" : "produtos cadastrados"}</small></div>
       </section>
 
       <section className="panel company-formula-panel">
-        <div className="panel-heading"><div><span>Dados da empresa</span><h2>Aguardando fontes comerciais</h2><p>Risco, receita, relacionamento, NPS e demais indicadores ainda não foram informados.</p></div></div>
+        <div className="panel-heading"><div><span>Dados da empresa</span><h2>{classifiedProducts.length ? "Classificações disponíveis por produto" : "Aguardando fontes comerciais"}</h2><p>O risco consolidado da empresa continua sem classificação até receber dados de relacionamento. Os perfis informados são exibidos individualmente abaixo.</p></div></div>
       </section>
 
       <section className="panel clients-panel">

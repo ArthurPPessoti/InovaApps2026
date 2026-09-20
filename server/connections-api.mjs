@@ -25,12 +25,46 @@ import {
   normalizeAnalyticsFrom,
 } from "./product-analytics.mjs";
 import { getProductTelemetryByProduct } from "./product-telemetry.mjs";
+import {
+  ensureProductRiskSchema,
+  getProductRiskProfiles,
+  upsertProductRiskProfile,
+} from "./product-risk.mjs";
+import { seedDemoTelemetry } from "./telemetry-demo-seed.mjs";
 import { ensureTelemetryEventSchema } from "./telemetry-schema.mjs";
 
 const DATA_DIRECTORY = join(process.cwd(), ".data", "connections");
 const DATABASE_PATH = join(DATA_DIRECTORY, "connections.sqlite");
 const ENCRYPTION_KEY_PATH = join(DATA_DIRECTORY, "credential.key");
 const LEGACY_APPLICATION_TYPE_VALUE = "internal";
+const SHOWCASE_DEMO = {
+  company: {
+    id: "company_nexora_demo",
+    name: "Nexora Distribuição",
+    normalizedName: "nexora distribuicao",
+  },
+  product: {
+    id: "product_f3bede39f94b",
+    name: "NexStock — Gestão de Estoque",
+    normalizedName: "nexstock — gestao de estoque",
+  },
+  applicationId: "app_nexstockdemo",
+  features: [
+    { id: "feature_nexstock_01_stock", name: "Consulta de estoque", eventName: "estoque_consultado" },
+    { id: "feature_nexstock_02_product", name: "Cadastro de produto", eventName: "produto_cadastrado" },
+    { id: "feature_nexstock_03_report", name: "Geração de relatório", eventName: "relatorio_gerado" },
+  ],
+  riskProfile: {
+    segment: "Distribuição",
+    plan: "Enterprise",
+    monthlyRevenue: 28_500,
+    slaPercent: 76,
+    nps: 5,
+    openTickets: 6,
+    criticalTickets: 2,
+    paymentDelayDays: 12,
+  },
+};
 
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -175,6 +209,7 @@ function openDatabase() {
       ON portfolio_products(company_id);
   `);
   ensureTelemetryEventSchema(database);
+  ensureProductRiskSchema(database);
   const applicationColumns = database.prepare("PRAGMA table_info(connection_applications)").all();
   if (!applicationColumns.some((column) => column.name === "client_id")) {
     database.exec("ALTER TABLE connection_applications ADD COLUMN client_id TEXT;");
@@ -336,6 +371,155 @@ function normalizeLookupName(value) {
     .toLocaleLowerCase("pt-BR");
 }
 
+function availableId(database, table, preferredId, prefix) {
+  const exists = database.prepare(`SELECT 1 FROM ${table} WHERE id = ?`).get(preferredId);
+  return exists ? createId(prefix) : preferredId;
+}
+
+export function ensureShowcaseDemo(database, encryptionKey, { now = new Date() } = {}) {
+  const timestamp = now.toISOString();
+  let product = database.prepare(`
+    SELECT
+      id,
+      company_id AS companyId,
+      company_name AS companyName,
+      name,
+      normalized_name AS normalizedName
+    FROM portfolio_products
+    WHERE id = ?
+  `).get(SHOWCASE_DEMO.product.id);
+  if (product?.normalizedName !== SHOWCASE_DEMO.product.normalizedName) product = null;
+  let application = product
+    ? database.prepare("SELECT id FROM connection_applications WHERE client_id = ?").get(product.id)
+    : null;
+  const created = { company: false, product: false, application: false, features: 0, riskProfile: false };
+
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    if (!product) {
+      let company = database.prepare(`
+        SELECT id, name
+        FROM portfolio_companies
+        WHERE normalized_name = ?
+      `).get(SHOWCASE_DEMO.company.normalizedName);
+      if (!company) {
+        const companyId = availableId(
+          database,
+          "portfolio_companies",
+          SHOWCASE_DEMO.company.id,
+          "company",
+        );
+        database.prepare(`
+          INSERT INTO portfolio_companies (id, name, normalized_name, created_at)
+          VALUES (?, ?, ?, ?)
+        `).run(
+          companyId,
+          SHOWCASE_DEMO.company.name,
+          SHOWCASE_DEMO.company.normalizedName,
+          timestamp,
+        );
+        company = { id: companyId, name: SHOWCASE_DEMO.company.name };
+        created.company = true;
+      }
+
+      product = database.prepare(`
+        SELECT id, company_id AS companyId, company_name AS companyName, name
+        FROM portfolio_products
+        WHERE company_id = ? AND normalized_name = ?
+      `).get(company.id, SHOWCASE_DEMO.product.normalizedName);
+      if (!product) {
+        const productId = availableId(
+          database,
+          "portfolio_products",
+          SHOWCASE_DEMO.product.id,
+          "product",
+        );
+        database.prepare(`
+          INSERT INTO portfolio_products (
+            id, company_id, company_name, name, normalized_name, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          productId,
+          company.id,
+          company.name,
+          SHOWCASE_DEMO.product.name,
+          SHOWCASE_DEMO.product.normalizedName,
+          timestamp,
+        );
+        product = {
+          id: productId,
+          companyId: company.id,
+          companyName: company.name,
+          name: SHOWCASE_DEMO.product.name,
+        };
+        created.product = true;
+      }
+    }
+
+    application = database.prepare("SELECT id FROM connection_applications WHERE client_id = ?").get(product.id);
+    if (!application) {
+      const applicationId = availableId(
+        database,
+        "connection_applications",
+        SHOWCASE_DEMO.applicationId,
+        "app",
+      );
+      insertApplication(database, encryptionKey, {
+        legacyName: product.name,
+        client: `${product.name} · ${product.companyName}`,
+        clientId: product.id,
+        createdAt: timestamp,
+      }, applicationId);
+      application = { id: applicationId };
+      created.application = true;
+    }
+
+    SHOWCASE_DEMO.features.forEach((feature, index) => {
+      const exists = database.prepare(`
+        SELECT id
+        FROM connection_features
+        WHERE application_id = ? AND event_name = ?
+      `).get(application.id, feature.eventName);
+      if (exists) return;
+      const featureId = availableId(database, "connection_features", feature.id, "feature");
+      database.prepare(`
+        INSERT INTO connection_features (id, application_id, name, event_name, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(
+        featureId,
+        application.id,
+        feature.name,
+        feature.eventName,
+        new Date(now.getTime() + index).toISOString(),
+      );
+      created.features += 1;
+    });
+    const existingRiskProfile = database.prepare(`
+      SELECT 1 FROM portfolio_product_risk_profiles WHERE product_id = ?
+    `).get(product.id);
+    if (!existingRiskProfile) {
+      upsertProductRiskProfile(database, product.id, SHOWCASE_DEMO.riskProfile, {
+        source: "demo",
+        now,
+      });
+      created.riskProfile = true;
+    }
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  const seed = seedDemoTelemetry(database, { applicationId: application.id, now });
+  return {
+    companyId: product.companyId,
+    productId: product.id,
+    applicationId: application.id,
+    created,
+    seed,
+  };
+}
+
 function normalizeNewProductInput(body) {
   if (!body.newProduct || typeof body.newProduct !== "object") return null;
   const productName = typeof body.newProduct.name === "string" ? body.newProduct.name.trim() : "";
@@ -368,6 +552,7 @@ function listPersistedPortfolio(database) {
     companies,
     products,
     telemetryByProduct: getProductTelemetryByProduct(database),
+    riskByProduct: getProductRiskProfiles(database),
   };
 }
 
@@ -387,6 +572,40 @@ async function handleApi(request, response, database, encryptionKey) {
 
   if (method === "GET" && url.pathname === "/api/portfolio") {
     sendJson(response, 200, listPersistedPortfolio(database));
+    return true;
+  }
+
+  const productRiskMatch = url.pathname.match(/^\/api\/portfolio\/products\/([^/]+)\/risk-profile$/);
+  if (method === "PUT" && productRiskMatch) {
+    let productId;
+    try {
+      productId = decodeURIComponent(productRiskMatch[1]).trim();
+    } catch {
+      sendJson(response, 400, { error: "Identificador de produto inválido." });
+      return true;
+    }
+    if (!productId || productId.length > 128) {
+      sendJson(response, 400, { error: "Identificador de produto inválido." });
+      return true;
+    }
+    const product = database.prepare("SELECT 1 FROM portfolio_products WHERE id = ?").get(productId);
+    if (!product) {
+      sendJson(response, 404, { error: "Produto não encontrado na carteira persistida." });
+      return true;
+    }
+
+    try {
+      const riskProfile = upsertProductRiskProfile(database, productId, await readJson(request), {
+        source: "manual",
+      });
+      sendJson(response, 200, { riskProfile });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        sendJson(response, 400, { error: error.message });
+        return true;
+      }
+      throw error;
+    }
     return true;
   }
 
@@ -857,6 +1076,14 @@ async function handleApi(request, response, database, encryptionKey) {
 function installMiddleware(server) {
   const database = openDatabase();
   const encryptionKey = loadEncryptionKey();
+  try {
+    const showcase = ensureShowcaseDemo(database, encryptionKey);
+    console.info(
+      `[showcase-demo] NexStock disponível com ${showcase.seed.totalDemoEvents} eventos demonstrativos.`,
+    );
+  } catch (error) {
+    console.error("[showcase-demo] Não foi possível preparar o exemplo NexStock:", error);
+  }
 
   server.httpServer?.once("close", () => database.close());
   server.middlewares.use(async (request, response, next) => {

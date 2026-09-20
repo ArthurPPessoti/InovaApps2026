@@ -103,9 +103,10 @@ function ActiveClients({
     && matchesTelemetryFilter(telemetryFor(product.id), effectiveTelemetryFilter)
   ));
   const visibleCompanies = attentionOnly ? attentionCompanies : attentionCompanies;
-  const visiblePersistedProducts = attentionOnly
-    ? []
-    : persistedProducts.filter((product) => matchesTelemetryFilter(product.telemetry, effectiveTelemetryFilter));
+  const visiblePersistedProducts = persistedProducts.filter((product) => (
+    (!attentionOnly || (product.riskProfile && product.riskProfile.riskLevel !== "Baixo"))
+    && matchesTelemetryFilter(product.telemetry, effectiveTelemetryFilter)
+  ));
   const persistedByCompany = useMemo(() => {
     const groups = new Map<string, typeof persistedProducts>();
     visiblePersistedProducts.forEach((product) => {
@@ -131,7 +132,7 @@ function ActiveClients({
           <span>{attentionOnly ? "Ordem de ação" : "Amostra monitorada"}</span>
           <h2>{attentionOnly ? `${view === "produtos" ? "Produtos" : "Empresas"} que exigem atenção` : `${view === "produtos" ? "Produtos" : "Empresas"} com contrato ativo`}</h2>
           <p>{attentionOnly
-            ? `${visibleCount} registros demonstrativos em atenção`
+            ? `${visibleCount} registros em atenção`
             : `${visibleCount} registros disponíveis na carteira consolidada`}</p>
         </div>
         <div className="panel-tools">
@@ -174,9 +175,12 @@ function ActiveClients({
             {visibleProducts.map((product) => { const company = getCompany(product.companyId)!; const telemetry = telemetryFor(product.id); return (
               <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small>{hasTelemetry && <ProductTelemetryStatus telemetry={telemetry} />}</td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{hasTelemetry ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
             ); })}
-            {visiblePersistedProducts.map((product) => (
-              <tr key={product.id}><td><strong>{product.productName}</strong><small>{product.companyName} · Dados comerciais não informados</small>{hasTelemetry && <ProductTelemetryStatus telemetry={product.telemetry} />}</td><td>Não informado</td><td>Sem dados</td><td className="revenue-cell">Não informado</td><td className="signal-cell">Sem evidência comercial</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
-            ))}
+            {visiblePersistedProducts.map((product) => {
+              const risk = product.riskProfile;
+              return (
+                <tr key={product.id}><td><strong>{product.productName}</strong><small>{product.companyName} · {risk ? `${risk.plan}${risk.source === "demo" ? " · Exemplo demonstrativo" : ""}` : "Dados comerciais não informados"}</small>{hasTelemetry && <ProductTelemetryStatus telemetry={product.telemetry} />}</td><td>{risk?.segment ?? "Não informado"}</td><td>{risk ? <RiskBadge level={risk.riskLevel} score={risk.riskScore} /> : "Sem dados"}</td><td className="revenue-cell">{risk ? formatCurrency(risk.monthlyRevenue) : "Não informado"}</td><td className="signal-cell">{risk?.primarySignal ?? "Sem evidência comercial"}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
+              );
+            })}
             </>}
           </> : <>
             {visibleCompanies.map((portfolio) => {
