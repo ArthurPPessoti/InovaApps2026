@@ -1,4 +1,3 @@
-export type ApplicationType = "internal" | "multiuser";
 export type IntegrationStatus = "waiting_integration" | "connected";
 
 export interface MonitoredFeature {
@@ -10,10 +9,8 @@ export interface MonitoredFeature {
 
 export interface ConnectedApplication {
   id: string;
-  name: string;
   clientId: string | null;
   client: string | null;
-  type: ApplicationType;
   status: IntegrationStatus;
   createdAt: string;
   features: MonitoredFeature[];
@@ -31,12 +28,22 @@ export interface IntegrationEvent {
   receivedAt: string;
 }
 
-export interface NewApplicationInput {
-  name: string;
+export interface ExistingProductApplicationInput {
   clientId: string;
   client: string;
-  type: ApplicationType;
+  productName: string;
 }
+
+export interface NewProductApplicationInput {
+  newProduct: {
+    name: string;
+    company:
+      | { mode: "existing"; id: string; name: string }
+      | { mode: "new"; name: string };
+  };
+}
+
+export type NewApplicationInput = ExistingProductApplicationInput | NewProductApplicationInput;
 
 export interface LinkApplicationClientInput {
   clientId: string;

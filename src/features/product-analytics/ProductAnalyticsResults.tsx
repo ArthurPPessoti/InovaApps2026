@@ -18,8 +18,8 @@ export function ProductAnalyticsResults({
 
   return (
     <>
-      <section className="product-analytics-metrics" aria-label="Indicadores reais de uso">
-        <MetricCard icon={<Pulse size={22} weight="duotone" />} label="Total de eventos" value={summary.metrics.totalEvents} helper="Recebidos no período" />
+      <section className="product-analytics-metrics" aria-label="Indicadores de uso monitorado">
+        <MetricCard icon={<Pulse size={22} weight="duotone" />} label="Total de eventos" value={summary.metrics.totalEvents} helper="De funcionalidades monitoradas" />
         <MetricCard
           icon={<UsersThree size={22} weight="duotone" />}
           label="Usuários únicos"
@@ -28,7 +28,7 @@ export function ProductAnalyticsResults({
             ? "Nenhum user_id informado"
             : "user_id distintos no período"}
         />
-        <MetricCard icon={<SquaresFour size={22} weight="duotone" />} label="Funcionalidades utilizadas" value={summary.metrics.featuresUsed} helper="Eventos distintos no período" />
+        <MetricCard icon={<SquaresFour size={22} weight="duotone" />} label="Funcionalidades utilizadas" value={summary.metrics.featuresUsed} helper="Funcionalidades monitoradas distintas" />
       </section>
 
       {summary.metrics.totalEvents === 0 ? (
@@ -40,7 +40,7 @@ export function ProductAnalyticsResults({
       ) : (
         <section className="product-analytics-panel">
           <div className="product-analytics-panel-heading">
-            <div><span>Eventos reais → contagem</span><h2>Utilização por funcionalidade</h2></div>
+            <div><span>Eventos monitorados → contagem</span><h2>Utilização por funcionalidade</h2></div>
             <small>{summary.features.length} funcionalidade(s)</small>
           </div>
           <div className="product-analytics-feature-list">
@@ -49,7 +49,6 @@ export function ProductAnalyticsResults({
                 <div className="product-analytics-feature-copy">
                   <strong>{feature.name}</strong>
                   <code>{feature.eventName}</code>
-                  {!feature.registered && <small>Evento ainda não cadastrado em Funcionalidades monitoradas</small>}
                 </div>
                 <div className="product-analytics-feature-usage">
                   <div aria-hidden="true"><span style={{ width: `${(feature.usageCount / maxUsage) * 100}%` }} /></div>

@@ -1,21 +1,23 @@
 import {
   ArrowLeft,
   BracketsCurly,
-  Check,
   CheckCircle,
   ClipboardText,
   Code,
-  DeviceMobile,
   IdentificationCard,
   LinkSimple,
   Plus,
   Pulse,
   SpinnerGap,
-  UsersThree,
   WarningCircle,
 } from "@phosphor-icons/react";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  normalizePortfolioName,
+  type PortfolioCompanyRecord,
+  usePortfolio,
+} from "../portfolio/PortfolioContext";
 import {
   addFeature,
   createApplication,
@@ -25,9 +27,13 @@ import {
   listEvents,
   migrateLegacyApplications,
 } from "./connectionApi";
-import { connectionClientOptions, type ConnectionClientOption } from "./clientOptions";
+import { buildConnectionClientOptions, type ConnectionClientOption } from "./clientOptions";
+import {
+  buildTrackerTestCommand,
+  TRACKER_CREDENTIAL_PLACEHOLDER,
+  trackerTestCommandButtonLabel,
+} from "./trackerTestCommand";
 import type {
-  ApplicationType,
   ConnectedApplication,
   IntegrationEvent,
   NewApplicationInput,
@@ -36,14 +42,24 @@ import type {
 import "./connections.css";
 
 type DetailTab = "configuration" | "events" | "integration";
-
-const applicationTypeLabels: Record<ApplicationType, string> = {
-  internal: "Uso interno",
-  multiuser: "Multiusuário",
-};
+const NEW_PRODUCT_OPTION = "__new_product__";
 
 export function ConnectionsFeature() {
+  const {
+    companies,
+    products,
+    loading: portfolioLoading,
+    error: portfolioError,
+    refresh: refreshPortfolio,
+  } = usePortfolio();
+  const connectionClientOptions = useMemo(() => buildConnectionClientOptions(products), [products]);
   const [applications, setApplications] = useState<ConnectedApplication[]>([]);
+  const availableConnectionClientOptions = useMemo(() => {
+    const connectedProductIds = new Set(
+      applications.map((application) => application.clientId).filter((id): id is string => Boolean(id)),
+    );
+    return connectionClientOptions.filter((client) => !connectedProductIds.has(client.id));
+  }, [applications, connectionClientOptions]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,7 +71,7 @@ export function ConnectionsFeature() {
       setApplications(await listApplications());
       setPageError("");
     } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Não foi possível carregar as aplicações.");
+      setPageError(error instanceof Error ? error.message : "Não foi possível carregar as conexões.");
     } finally {
       setLoading(false);
     }
@@ -91,7 +107,7 @@ export function ConnectionsFeature() {
   useEffect(() => {
     if (!applicationId || !selectedApplication || selectedApplication.credential) return;
     void refreshApplication(applicationId).catch((error: unknown) => {
-      setPageError(error instanceof Error ? error.message : "Não foi possível carregar a aplicação.");
+      setPageError(error instanceof Error ? error.message : "Não foi possível carregar a conexão.");
     });
   }, [applicationId, refreshApplication, selectedApplication]);
 
@@ -101,6 +117,7 @@ export function ConnectionsFeature() {
 
   const handleCreateApplication = async (input: NewApplicationInput) => {
     const application = await createApplication(input);
+    if ("newProduct" in input) await refreshPortfolio();
     setApplications((current) => [application, ...current]);
     showApplication(application.id);
   };
@@ -112,7 +129,7 @@ export function ConnectionsFeature() {
 
   const handleLinkClient = async (id: string, clientId: string) => {
     const client = connectionClientOptions.find((item) => item.id === clientId);
-    if (!client) throw new Error("Selecione um cliente válido da carteira.");
+    if (!client) throw new Error("Selecione um produto válido da carteira.");
     const application = await linkApplicationClient(id, {
       clientId: client.id,
       client: client.displayName,
@@ -121,16 +138,26 @@ export function ConnectionsFeature() {
   };
 
   if (loading) {
-    return <LoadingState label="Carregando aplicações..." />;
+    return <LoadingState label="Carregando conexões..." />;
   }
 
   if (view === "new") {
-    return <NewApplicationForm clients={connectionClientOptions} onCancel={showList} onCreate={handleCreateApplication} />;
+    return (
+      <NewApplicationForm
+        clients={availableConnectionClientOptions}
+        catalogClients={connectionClientOptions}
+        companies={companies}
+        portfolioLoading={portfolioLoading}
+        portfolioError={portfolioError}
+        onCancel={showList}
+        onCreate={handleCreateApplication}
+      />
+    );
   }
 
   if (applicationId) {
     if (selectedApplication && !selectedApplication.credential) {
-      return <LoadingState label="Carregando configuração da aplicação..." />;
+      return <LoadingState label="Carregando configuração da conexão..." />;
     }
 
     return (
@@ -142,7 +169,8 @@ export function ConnectionsFeature() {
         onAddFeature={(input) => handleAddFeature(applicationId, input)}
         onLinkClient={(clientId) => handleLinkClient(applicationId, clientId)}
         onRefresh={() => refreshApplication(applicationId)}
-        clients={connectionClientOptions}
+        clients={availableConnectionClientOptions}
+        identity={resolveConnectionIdentity(selectedApplication, connectionClientOptions, portfolioLoading)}
         pageError={pageError}
       />
     );
@@ -153,19 +181,19 @@ export function ConnectionsFeature() {
       <header className="connect-page-header">
         <div>
           <span className="eyebrow"><LinkSimple size={15} weight="duotone" /> Integrações</span>
-          <h1>Conectar</h1>
-          <p>Conecte aplicações à plataforma e configure o monitoramento de eventos de utilização.</p>
+          <h1>Conexões</h1>
+          <p>Conecte cada produto uma única vez e configure o recebimento de eventos de utilização.</p>
         </div>
         <button className="primary-button connect-button" type="button" onClick={showNewApplication}>
-          <Plus size={17} weight="bold" /> Nova aplicação
+          <Plus size={17} weight="bold" /> Nova conexão
         </button>
       </header>
 
       <section className="connect-section" aria-labelledby="applications-title">
         <div className="connect-section-heading">
           <div>
-            <span>Aplicações</span>
-            <h2 id="applications-title">Aplicações conectadas</h2>
+            <span>Produtos</span>
+            <h2 id="applications-title">Produtos conectados</h2>
           </div>
           {applications.length > 0 && <small>{applications.length} cadastrada(s)</small>}
         </div>
@@ -175,28 +203,26 @@ export function ConnectionsFeature() {
         {applications.length === 0 ? (
           <div className="connect-empty-state">
             <span className="connect-empty-icon"><LinkSimple size={30} weight="duotone" /></span>
-            <h3>Nenhuma aplicação conectada</h3>
-            <p>Cadastre uma aplicação para começar a monitorar eventos de utilização.</p>
+            <h3>Nenhum produto conectado</h3>
+            <p>Conecte um produto para começar a monitorar seus eventos de utilização.</p>
             <button className="primary-button connect-button" type="button" onClick={showNewApplication}>
-              <Plus size={17} weight="bold" /> Conectar aplicação
+              <Plus size={17} weight="bold" /> Conectar produto
             </button>
           </div>
         ) : (
           <div className="connect-app-grid">
-            {applications.map((application) => (
-              <article className="connect-app-card" key={application.id}>
+            {applications.map((application) => {
+              const identity = resolveConnectionIdentity(application, connectionClientOptions, portfolioLoading);
+              return <article className="connect-app-card" key={application.id}>
                 <div className="connect-app-card-top">
                   <span className="connect-app-icon">
-                    {application.type === "multiuser"
-                      ? <UsersThree size={24} weight="duotone" />
-                      : <DeviceMobile size={24} weight="duotone" />}
+                    <LinkSimple size={24} weight="duotone" />
                   </span>
                   <StatusBadge application={application} />
                 </div>
                 <div className="connect-app-copy">
-                  <span>{applicationTypeLabels[application.type]}</span>
-                  <h3>{application.name}</h3>
-                  <p>Cliente: {application.clientId && application.client ? `${application.clientId} — ${application.client}` : "Não vinculado"}</p>
+                  <h3>{identity.productName}</h3>
+                  <p>{identity.companyName}</p>
                 </div>
                 <div className="connect-app-meta">
                   <span><IdentificationCard size={15} /> {application.id}</span>
@@ -205,8 +231,8 @@ export function ConnectionsFeature() {
                 <button className="secondary-button connect-button" type="button" onClick={() => showApplication(application.id)}>
                   Abrir
                 </button>
-              </article>
-            ))}
+              </article>;
+            })}
           </div>
         )}
       </section>
@@ -224,6 +250,29 @@ function formatDateTime(value: string) {
     dateStyle: "short",
     timeStyle: "medium",
   }).format(new Date(value));
+}
+
+interface ConnectionIdentity {
+  productName: string;
+  companyName: string;
+}
+
+function resolveConnectionIdentity(
+  application: ConnectedApplication | undefined,
+  clients: ConnectionClientOption[],
+  portfolioLoading = false,
+): ConnectionIdentity {
+  const product = application?.clientId
+    ? clients.find((client) => client.id === application.clientId)
+    : undefined;
+  if (product) return { productName: product.name, companyName: product.companyName };
+  if (portfolioLoading && application?.clientId) {
+    return { productName: "Carregando produto...", companyName: "Catálogo da carteira" };
+  }
+  if (application?.clientId) {
+    return { productName: "Produto não encontrado", companyName: `Application ID: ${application.id}` };
+  }
+  return { productName: "Produto não vinculado", companyName: "Conexão legada — vínculo necessário" };
 }
 
 function StatusBadge({ application }: { application: ConnectedApplication }) {
@@ -250,34 +299,91 @@ function ErrorMessage({ message }: { message: string }) {
 
 function NewApplicationForm({
   clients,
+  catalogClients,
+  companies,
+  portfolioLoading,
+  portfolioError,
   onCancel,
   onCreate,
 }: {
   clients: ConnectionClientOption[];
+  catalogClients: ConnectionClientOption[];
+  companies: PortfolioCompanyRecord[];
+  portfolioLoading: boolean;
+  portfolioError: string;
   onCancel: () => void;
   onCreate: (input: NewApplicationInput) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
   const [clientId, setClientId] = useState("");
-  const [type, setType] = useState<ApplicationType | "">("");
+  const [companyMode, setCompanyMode] = useState<"existing" | "new">("existing");
+  const [companyId, setCompanyId] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [productName, setProductName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const creatingProduct = clientId === NEW_PRODUCT_OPTION;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
-    const client = clients.find((item) => item.id === clientId);
-    if (!name.trim() || !client || !type) {
-      setError("Preencha todos os campos e selecione o tipo da aplicação.");
-      return;
-    }
-
     setSubmitting(true);
     try {
-      await onCreate({ name, clientId: client.id, client: client.displayName, type });
+      if (!creatingProduct) {
+        const client = clients.find((item) => item.id === clientId);
+        if (!client) {
+          setError("Selecione um produto da carteira.");
+          return;
+        }
+        await onCreate({ clientId: client.id, client: client.displayName, productName: client.name });
+        return;
+      }
+
+      const selectedCompany = companyMode === "existing"
+        ? companies.find((company) => company.id === companyId)
+        : undefined;
+      const effectiveCompanyName = selectedCompany?.name ?? companyName.trim();
+      if (!productName.trim() || !effectiveCompanyName || (companyMode === "existing" && !selectedCompany)) {
+        setError("Informe a empresa e o nome do novo produto.");
+        return;
+      }
+
+      if (companyMode === "new") {
+        const duplicateCompany = companies.find((company) => (
+          normalizePortfolioName(company.name) === normalizePortfolioName(effectiveCompanyName)
+        ));
+        if (duplicateCompany) {
+          setCompanyMode("existing");
+          setCompanyId(duplicateCompany.id);
+          setError(`A empresa ${duplicateCompany.name} já existe e foi selecionada. Revise e envie novamente.`);
+          return;
+        }
+      }
+
+      const effectiveCompanyId = selectedCompany?.id ?? "";
+      const duplicateProduct = catalogClients.find((client) => (
+        client.companyId === effectiveCompanyId
+        && normalizePortfolioName(client.name) === normalizePortfolioName(productName)
+      ));
+      if (duplicateProduct) {
+        const available = clients.some((client) => client.id === duplicateProduct.id);
+        if (available) setClientId(duplicateProduct.id);
+        setError(available
+          ? `O produto ${duplicateProduct.name} já existe para esta empresa e foi selecionado. Envie novamente para conectar.`
+          : `O produto ${duplicateProduct.name} já existe e já possui uma conexão técnica.`);
+        return;
+      }
+
+      await onCreate({
+        newProduct: {
+          name: productName,
+          company: companyMode === "existing"
+            ? { mode: "existing", id: selectedCompany!.id, name: selectedCompany!.name }
+            : { mode: "new", name: effectiveCompanyName },
+        },
+      });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Não foi possível criar a aplicação.");
+      setError(submitError instanceof Error ? submitError.message : "Não foi possível conectar o produto.");
     } finally {
       setSubmitting(false);
     }
@@ -286,116 +392,90 @@ function NewApplicationForm({
   return (
     <div className="connect-page connect-page--form">
       <button className="connect-back-button" type="button" onClick={onCancel}>
-        <ArrowLeft size={16} /> Voltar para aplicações
+        <ArrowLeft size={16} /> Voltar para conexões
       </button>
 
       <header className="connect-page-header connect-page-header--compact">
         <div>
-          <span className="eyebrow">Nova aplicação</span>
-          <h1>Conectar uma aplicação</h1>
-          <p>Identifique a aplicação que futuramente enviará eventos de utilização para a plataforma.</p>
+          <span className="eyebrow">Nova conexão</span>
+          <h1>Conectar produto</h1>
+          <p>Selecione o produto que enviará eventos de utilização para a plataforma.</p>
         </div>
       </header>
 
       <form className="connect-form-panel" onSubmit={submit}>
         <div className="connect-form-grid">
           <label className="connect-field">
-            <span>Nome da aplicação</span>
-            <input
-              autoFocus
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Ex.: Sistema de Estoque"
-            />
-          </label>
-          <label className="connect-field">
-            <span>Cliente relacionado</span>
+            <span>Produto</span>
             <select
               required
               value={clientId}
               onChange={(event) => setClientId(event.target.value)}
+              disabled={portfolioLoading}
             >
-              <option value="">Selecione um cliente da carteira</option>
+              <option value="">{portfolioLoading ? "Carregando produtos..." : "Selecione um produto ainda não conectado"}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>{client.id} — {client.displayName}</option>
               ))}
+              <option disabled>────────────────────</option>
+              <option value={NEW_PRODUCT_OPTION}>＋ Cadastrar novo produto</option>
             </select>
           </label>
         </div>
 
-        <fieldset className="connect-type-fieldset">
-          <legend>Tipo da aplicação</legend>
-          <div className="connect-type-grid">
-            <TypeOption
-              type="internal"
-              selected={type === "internal"}
-              icon={<DeviceMobile size={23} weight="duotone" />}
-              title="Uso interno"
-              description="Aplicação utilizada internamente pelo cliente."
-              examples="Sistema administrativo, estoque ou ferramenta operacional."
-              onSelect={setType}
-            />
-            <TypeOption
-              type="multiuser"
-              selected={type === "multiuser"}
-              icon={<UsersThree size={23} weight="duotone" />}
-              title="Multiusuário"
-              description="Aplicação utilizada por uma base de usuários finais."
-              examples="SaaS, streaming, portal ou plataforma comercializada."
-              onSelect={setType}
-            />
-          </div>
-        </fieldset>
+        {creatingProduct && (
+          <section className="connect-new-product" aria-labelledby="new-product-title">
+            <div className="connect-new-product-heading">
+              <span>Novo produto</span>
+              <h2 id="new-product-title">Cadastre somente os dados essenciais</h2>
+              <p>Os dados comerciais poderão vir de outras fontes posteriormente.</p>
+            </div>
 
-        {error && <div className="connect-form-error" role="alert"><WarningCircle size={18} /> {error}</div>}
+            <fieldset className="connect-company-choice">
+              <legend>Empresa</legend>
+              <label>
+                <input type="radio" name="company-mode" checked={companyMode === "existing"} onChange={() => setCompanyMode("existing")} />
+                Empresa existente
+              </label>
+              <label>
+                <input type="radio" name="company-mode" checked={companyMode === "new"} onChange={() => setCompanyMode("new")} />
+                Nova empresa
+              </label>
+            </fieldset>
+
+            <div className="connect-form-grid">
+              {companyMode === "existing" ? (
+                <label className="connect-field">
+                  <span>Selecionar empresa</span>
+                  <select required value={companyId} onChange={(event) => setCompanyId(event.target.value)}>
+                    <option value="">Selecione uma empresa</option>
+                    {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+                  </select>
+                </label>
+              ) : (
+                <label className="connect-field">
+                  <span>Nome da empresa</span>
+                  <input required value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Ex.: Transportadora XPTO" />
+                </label>
+              )}
+              <label className="connect-field">
+                <span>Nome do produto</span>
+                <input required value={productName} onChange={(event) => setProductName(event.target.value)} placeholder="Ex.: Gestão de Frota" />
+              </label>
+            </div>
+          </section>
+        )}
+
+        {(error || portfolioError) && <div className="connect-form-error" role="alert"><WarningCircle size={18} /> {error || portfolioError}</div>}
 
         <div className="connect-form-actions">
           <button className="secondary-button connect-button" type="button" onClick={onCancel}>Cancelar</button>
           <button className="primary-button connect-button" type="submit" disabled={submitting}>
-            {submitting ? "Criando..." : "Criar aplicação"}
+            {submitting ? "Conectando..." : creatingProduct ? "Criar e conectar produto" : "Conectar produto"}
           </button>
         </div>
       </form>
     </div>
-  );
-}
-
-function TypeOption({
-  type,
-  selected,
-  icon,
-  title,
-  description,
-  examples,
-  onSelect,
-}: {
-  type: ApplicationType;
-  selected: boolean;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  examples: string;
-  onSelect: (type: ApplicationType) => void;
-}) {
-  return (
-    <label className={`connect-type-option ${selected ? "connect-type-option--selected" : ""}`}>
-      <input
-        type="radio"
-        name="application-type"
-        value={type}
-        checked={selected}
-        required
-        onChange={() => onSelect(type)}
-      />
-      <span className="connect-type-icon">{icon}</span>
-      <span className="connect-type-copy">
-        <strong>{title}</strong>
-        <span>{description}</span>
-        <small>{examples}</small>
-      </span>
-      <span className="connect-type-check" aria-hidden="true">{selected && <Check size={13} weight="bold" />}</span>
-    </label>
   );
 }
 
@@ -408,6 +488,7 @@ function ApplicationDetail({
   onLinkClient,
   onRefresh,
   clients,
+  identity,
   pageError,
 }: {
   application: ConnectedApplication | undefined;
@@ -418,6 +499,7 @@ function ApplicationDetail({
   onLinkClient: (clientId: string) => Promise<void>;
   onRefresh: () => Promise<ConnectedApplication>;
   clients: ConnectionClientOption[];
+  identity: ConnectionIdentity;
   pageError: string;
 }) {
   if (!application) {
@@ -426,9 +508,9 @@ function ApplicationDetail({
         <button className="connect-back-button" type="button" onClick={onBack}><ArrowLeft size={16} /> Voltar</button>
         <div className="connect-empty-state">
           <WarningCircle size={34} weight="duotone" />
-          <h3>Aplicação não encontrada</h3>
-          <p>Ela pode ter sido removida do armazenamento deste navegador.</p>
-          <button className="secondary-button connect-button" type="button" onClick={onBack}>Ver aplicações</button>
+          <h3>Conexão não encontrada</h3>
+          <p>Ela pode não existir mais no banco local.</p>
+          <button className="secondary-button connect-button" type="button" onClick={onBack}>Ver conexões</button>
         </div>
       </div>
     );
@@ -437,20 +519,17 @@ function ApplicationDetail({
   return (
     <div className="connect-page">
       <button className="connect-back-button" type="button" onClick={onBack}>
-        <ArrowLeft size={16} /> Voltar para aplicações
+        <ArrowLeft size={16} /> Voltar para conexões
       </button>
 
       <header className="connect-detail-header">
         <div className="connect-detail-identity">
           <span className="connect-app-icon connect-app-icon--large">
-            {application.type === "multiuser"
-              ? <UsersThree size={28} weight="duotone" />
-              : <DeviceMobile size={28} weight="duotone" />}
+            <LinkSimple size={28} weight="duotone" />
           </span>
           <div>
-            <span className="eyebrow">{applicationTypeLabels[application.type]}</span>
-            <h1>{application.name}</h1>
-            <p>{application.clientId && application.client ? `${application.clientId} — ${application.client}` : "Cliente não vinculado"}</p>
+            <h1>{identity.productName}</h1>
+            <p>{identity.companyName}</p>
           </div>
         </div>
         <StatusBadge application={application} />
@@ -458,7 +537,7 @@ function ApplicationDetail({
 
       {pageError && <ErrorMessage message={pageError} />}
 
-      <nav className="connect-tabs" aria-label="Seções da aplicação" role="tablist">
+      <nav className="connect-tabs" aria-label="Seções da conexão" role="tablist">
         <TabButton active={activeTab === "configuration"} onClick={() => onTabChange("configuration")}>Configuração</TabButton>
         <TabButton active={activeTab === "events"} onClick={() => onTabChange("events")}>Eventos</TabButton>
         <TabButton active={activeTab === "integration"} onClick={() => onTabChange("integration")}>Integração</TabButton>
@@ -468,6 +547,7 @@ function ApplicationDetail({
         {activeTab === "configuration" && (
           <ConfigurationTab
             application={application}
+            identity={identity}
             clients={clients}
             onAddFeature={onAddFeature}
             onLinkClient={onLinkClient}
@@ -496,11 +576,13 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function ConfigurationTab({
   application,
+  identity,
   clients,
   onAddFeature,
   onLinkClient,
 }: {
   application: ConnectedApplication;
+  identity: ConnectionIdentity;
   clients: ConnectionClientOption[];
   onAddFeature: (input: NewFeatureInput) => Promise<void>;
   onLinkClient: (clientId: string) => Promise<void>;
@@ -511,19 +593,19 @@ function ConfigurationTab({
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [linkingClient, setLinkingClient] = useState(!application.clientId);
-  const [selectedClientId, setSelectedClientId] = useState(application.clientId ?? "");
+  const [selectedClientId, setSelectedClientId] = useState("");
   const [linkError, setLinkError] = useState("");
   const [linkSubmitting, setLinkSubmitting] = useState(false);
 
   useEffect(() => {
-    setSelectedClientId(application.clientId ?? "");
+    setSelectedClientId("");
     setLinkingClient(!application.clientId);
   }, [application.id, application.clientId]);
 
   const submitClientLink = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedClientId) {
-      setLinkError("Selecione um cliente da carteira.");
+      setLinkError("Selecione um produto da carteira.");
       return;
     }
     setLinkSubmitting(true);
@@ -532,7 +614,7 @@ function ConfigurationTab({
       await onLinkClient(selectedClientId);
       setLinkingClient(false);
     } catch (submitError) {
-      setLinkError(submitError instanceof Error ? submitError.message : "Não foi possível vincular o cliente.");
+      setLinkError(submitError instanceof Error ? submitError.message : "Não foi possível vincular o produto.");
     } finally {
       setLinkSubmitting(false);
     }
@@ -558,29 +640,20 @@ function ConfigurationTab({
     <div className="connect-config-layout">
       <section className="connect-panel">
         <div className="connect-panel-heading">
-          <div><span>Dados básicos</span><h2>Aplicação</h2></div>
+          <div><span>Dados básicos</span><h2>Produto conectado</h2></div>
         </div>
         <dl className="connect-data-list">
-          <div><dt>Nome</dt><dd>{application.name}</dd></div>
-          <div>
-            <dt>Cliente</dt>
-            <dd className="connect-client-value">
-              <span>{application.clientId && application.client ? `${application.clientId} — ${application.client}` : "Não vinculado"}</span>
-              {!linkingClient && (
-                <button type="button" className="connect-inline-action" onClick={() => setLinkingClient(true)}>Alterar cliente</button>
-              )}
-            </dd>
-          </div>
-          <div><dt>Tipo</dt><dd>{applicationTypeLabels[application.type]}</dd></div>
+          <div><dt>Produto</dt><dd>{identity.productName}</dd></div>
+          <div><dt>Empresa</dt><dd>{identity.companyName}</dd></div>
           <div><dt>Application ID</dt><dd><code>{application.id}</code></dd></div>
           <div><dt>Status</dt><dd>{application.status === "connected" ? "Conectado" : "Aguardando integração"}</dd></div>
         </dl>
         {linkingClient && (
           <form className="connect-client-link-form" onSubmit={submitClientLink}>
             <label className="connect-field">
-              <span>{application.clientId ? "Novo cliente relacionado" : "Vincular cliente"}</span>
+              <span>Vincular produto</span>
               <select required value={selectedClientId} onChange={(event) => setSelectedClientId(event.target.value)}>
-                <option value="">Selecione um cliente da carteira</option>
+                <option value="">Selecione um produto da carteira</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>{client.id} — {client.displayName}</option>
                 ))}
@@ -588,7 +661,6 @@ function ConfigurationTab({
             </label>
             {linkError && <div className="connect-form-error" role="alert"><WarningCircle size={16} /> {linkError}</div>}
             <div className="connect-client-link-actions">
-              {application.clientId && <button className="connect-text-button" type="button" onClick={() => setLinkingClient(false)}>Cancelar</button>}
               <button className="secondary-button connect-button" type="submit" disabled={linkSubmitting}>
                 {linkSubmitting ? "Salvando..." : "Salvar vínculo"}
               </button>
@@ -703,7 +775,7 @@ function EventsTab({
         <div className="connect-empty-state connect-empty-state--inside">
           <Pulse size={32} weight="duotone" />
           <h3>Nenhum evento recebido</h3>
-          <p>Quando a aplicação começar a enviar eventos, eles aparecerão aqui.</p>
+          <p>Quando o produto começar a enviar eventos, eles aparecerão aqui.</p>
         </div>
       ) : (
         <div className="connect-events-table" role="table" aria-label="Eventos recebidos">
@@ -728,6 +800,7 @@ function EventsTab({
 function IntegrationTab({ application }: { application: ConnectedApplication }) {
   const endpoint = `${window.location.origin}/api/events`;
   const credential = application.credential ?? "Carregando credencial...";
+  const [commandCopied, setCommandCopied] = useState(false);
   const trackerExample = useMemo(() => `import { createTracker } from "./tracker/createTracker.mjs";
 
 const tracker = createTracker({
@@ -744,11 +817,21 @@ try {
 } catch (error) {
   console.error("Falha ao enviar evento:", error.message);
 }`, [application.id, endpoint]);
-  const testExample = useMemo(() => `$env:TRACKER_APPLICATION_ID = "${application.id}"
-$env:TRACKER_CREDENTIAL = "<cole a credencial acima>"
-$env:TRACKER_EVENT = "tracker_test_event"
-$env:TRACKER_USER_ID = "user_001"
-npm run test:tracker:real`, [application.id]);
+  const testCommand = useMemo(
+    () => buildTrackerTestCommand(application.id, application.credential),
+    [application.credential, application.id],
+  );
+
+  useEffect(() => setCommandCopied(false), [application.id, testCommand.ready]);
+
+  const copyTestCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(testCommand.command);
+      setCommandCopied(true);
+    } catch {
+      setCommandCopied(false);
+    }
+  };
 
   return (
     <section className="connect-panel">
@@ -787,13 +870,22 @@ npm run test:tracker:real`, [application.id]);
           <BracketsCurly size={22} />
           <span><strong>Teste real pelo terminal</strong><small>O script usa o tracker e envia o evento pela API existente.</small></span>
         </div>
-        <pre><code>{testExample}</code></pre>
+        {!testCommand.ready && (
+          <div className="connect-command-placeholder-note" role="note">
+            <WarningCircle size={18} />
+            <span>
+              <strong>Este é um modelo e precisa ser editado.</strong>
+              <small>1. Copie a credencial secreta exibida acima. 2. Substitua <code>{TRACKER_CREDENTIAL_PLACEHOLDER}</code>. 3. Execute o comando no terminal.</small>
+            </span>
+          </div>
+        )}
+        <pre><code>{testCommand.command}</code></pre>
         <button
           className="connect-copy-button"
           type="button"
-          onClick={() => void navigator.clipboard.writeText(testExample)}
+          onClick={() => void copyTestCommand()}
         >
-          <ClipboardText size={17} /> Copiar comando
+          <ClipboardText size={17} /> {trackerTestCommandButtonLabel(testCommand, commandCopied)}
         </button>
       </div>
 

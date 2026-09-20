@@ -27,7 +27,8 @@ function createDatabase() {
       application_id TEXT NOT NULL,
       event_name TEXT NOT NULL,
       user_id TEXT,
-      received_at TEXT NOT NULL
+      received_at TEXT NOT NULL,
+      data_origin TEXT NOT NULL DEFAULT 'real'
     );
   `);
   database.prepare("INSERT INTO connection_applications VALUES (?, ?, ?, ?)")
@@ -44,23 +45,25 @@ function createDatabase() {
 }
 
 function insertEvent(database, id, applicationId, eventName, userId, receivedAt) {
-  database.prepare("INSERT INTO connection_events VALUES (?, ?, ?, ?, ?)")
+  database.prepare(`
+    INSERT INTO connection_events (id, application_id, event_name, user_id, received_at)
+    VALUES (?, ?, ?, ?, ?)
+  `)
     .run(id, applicationId, eventName, userId, receivedAt);
 }
 
-test("agrega eventos reais, ignora usuários ausentes e resolve o nome amigável", () => {
+test("agrega somente eventos de funcionalidades monitoradas e resolve o nome amigável", () => {
   const database = createDatabase();
   insertEvent(database, "evt_1", "app_stock", "relatorio_gerado", "user_001", "2026-09-19T12:00:00.000Z");
   insertEvent(database, "evt_2", "app_stock", "relatorio_gerado", "user_001", "2026-09-19T13:00:00.000Z");
-  insertEvent(database, "evt_3", "app_stock", "estoque_consultado", null, "2026-09-19T14:00:00.000Z");
+  insertEvent(database, "evt_3", "app_stock", "estoque_consultado", "technical_user", "2026-09-19T14:00:00.000Z");
   insertEvent(database, "evt_other", "app_other", "relatorio_gerado", "user_999", "2026-09-19T15:00:00.000Z");
 
   const result = getProductAnalyticsSummary(database, "app_stock");
 
-  assert.deepEqual(result.metrics, { totalEvents: 3, uniqueUsers: 1, featuresUsed: 2 });
+  assert.deepEqual(result.metrics, { totalEvents: 2, uniqueUsers: 1, featuresUsed: 1 });
   assert.deepEqual(result.features, [
     { eventName: "relatorio_gerado", name: "Gerar relatório", usageCount: 2, registered: true },
-    { eventName: "estoque_consultado", name: "estoque_consultado", usageCount: 1, registered: false },
   ]);
   database.close();
 });
@@ -95,8 +98,8 @@ test("agrega somente as aplicações vinculadas ao cliente", () => {
 
   assert.deepEqual(result.metrics, { totalEvents: 3, uniqueUsers: 2, featuresUsed: 2 });
   assert.deepEqual(result.applications, [
-    { id: "app_portal", name: "Portal do cliente" },
-    { id: "app_stock", name: "Sistema de Estoque" },
+    { id: "app_portal" },
+    { id: "app_stock" },
   ]);
   assert.deepEqual(result.features, [
     { eventName: "login_realizado", name: "Entrar no portal", usageCount: 2, registered: true },

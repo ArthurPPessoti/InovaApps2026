@@ -85,7 +85,7 @@ export function ClientRecentEvents({ clientId, demoEvents }: { clientId: string;
           <div>
             <strong>{event.name}</strong>
             <code>{event.eventName}</code>
-            <span>{event.applicationName}{event.userId ? ` · ${event.userId}` : " · usuário não informado"}</span>
+            <span>{event.userId ? `Usuário: ${event.userId}` : "Usuário não informado"}</span>
           </div>
           <small>{formatDateTime(event.receivedAt)}</small>
         </div>

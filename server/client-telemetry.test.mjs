@@ -29,7 +29,8 @@ function createDatabase() {
       application_id TEXT NOT NULL,
       event_name TEXT NOT NULL,
       user_id TEXT,
-      received_at TEXT NOT NULL
+      received_at TEXT NOT NULL,
+      data_origin TEXT NOT NULL DEFAULT 'real'
     );
   `);
   return database;
@@ -44,8 +45,19 @@ function insertApplication(database, id, name, clientId = null) {
 }
 
 function insertEvent(database, id, applicationId, eventName, receivedAt) {
-  database.prepare("INSERT INTO connection_events VALUES (?, ?, ?, ?, ?)")
+  database.prepare(`
+    INSERT INTO connection_events (id, application_id, event_name, user_id, received_at)
+    VALUES (?, ?, ?, ?, ?)
+  `)
     .run(id, applicationId, eventName, "user_001", receivedAt);
+}
+
+function insertDemoEvent(database, id, applicationId, eventName, receivedAt) {
+  database.prepare(`
+    INSERT INTO connection_events (
+      id, application_id, event_name, user_id, received_at, data_origin
+    ) VALUES (?, ?, ?, ?, ?, 'demo')
+  `).run(id, applicationId, eventName, "demo_user_001", receivedAt);
 }
 
 test("aplicação antiga permanece sem vínculo e seus eventos são preservados ao vinculá-la", () => {
@@ -63,10 +75,12 @@ test("aplicação antiga permanece sem vínculo e seus eventos são preservados 
   const telemetry = getClientTelemetry(database, "client_a");
   assert.equal(telemetry.applications.length, 1);
   assert.equal(telemetry.events[0].id, "evt_legacy");
+  assert.equal("name" in telemetry.applications[0], false);
+  assert.equal("applicationName" in telemetry.events[0], false);
   database.close();
 });
 
-test("reúne múltiplas aplicações e mantém isolamento entre clientes", () => {
+test("tolera vínculos legados múltiplos e mantém isolamento entre produtos", () => {
   const database = createDatabase();
   insertApplication(database, "app_a1", "Estoque", "client_a");
   insertApplication(database, "app_a2", "Portal", "client_a");
@@ -93,5 +107,16 @@ test("distingue cliente sem aplicação de cliente com aplicação sem eventos",
   const telemetry = getClientTelemetry(database, "client_a");
   assert.equal(telemetry.applications.length, 1);
   assert.equal(telemetry.events.length, 0);
+  database.close();
+});
+
+test("mantém a lista recente e o status da conexão focados em eventos reais", () => {
+  const database = createDatabase();
+  insertApplication(database, "app_demo", "Aplicação com demo", "client_a");
+  insertDemoEvent(database, "evt_demo", "app_demo", "uso_demo", "2026-09-19T14:00:00.000Z");
+
+  const telemetry = getClientTelemetry(database, "client_a");
+  assert.equal(telemetry.events.length, 0);
+  assert.equal(telemetry.applications[0].eventCount, 0);
   database.close();
 });

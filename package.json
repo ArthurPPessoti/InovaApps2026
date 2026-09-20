@@ -10,6 +10,7 @@
     "test:app": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
     "test:tracker": "node --test tracker/createTracker.test.mjs",
     "test:tracker:real": "node scripts/test-tracker.mjs",
+    "seed:telemetry-demo": "node server/telemetry-demo-seed.mjs",
     "demo:start": "node --env-file=demo-app/.env demo-app/server.mjs",
     "test:demo": "node --test demo-app/actions.test.mjs"
   },

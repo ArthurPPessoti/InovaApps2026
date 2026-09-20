@@ -25,6 +25,7 @@ import {
 import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
 import { getCompany, products, watchProducts } from "../data/mockData";
 import { ClientRecentEvents } from "../features/client-telemetry/ClientRecentEvents";
+import { type PortfolioProductRecord, usePortfolio } from "../features/portfolio/PortfolioContext";
 import { ProductUsageAnalytics } from "../features/product-analytics/ProductUsageAnalytics";
 
 function DetailTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
@@ -40,9 +41,17 @@ function DetailTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function ClientDetailPage() {
   const { clienteId } = useParams();
   const location = useLocation();
+  const { getProduct, loading } = usePortfolio();
   const client = [...products, ...watchProducts].find((item) => item.id === clienteId);
+  const persistedClient = clienteId ? getProduct(clienteId) : undefined;
   const backTarget = (location.state as { from?: string } | null)?.from ?? "/#clientes";
 
+  if (!client && loading) {
+    return <section className="not-found"><Pulse size={40} /><h1>Carregando produto...</h1></section>;
+  }
+  if (!client && persistedClient?.source === "persisted") {
+    return <PersistedProductDetail product={persistedClient} backTarget={backTarget} />;
+  }
   if (!client) {
     return (
       <section className="not-found">
@@ -184,6 +193,51 @@ export function ClientDetailPage() {
 
       <footer className="mock-footer">
         <UsersThree size={18} /> Produto de {company.name}. Dados demonstrativos; nenhuma classificação representa uma previsão real.
+      </footer>
+    </div>
+  );
+}
+
+function PersistedProductDetail({ product, backTarget }: { product: PortfolioProductRecord; backTarget: string }) {
+  return (
+    <div className="client-detail-page">
+      <Link className="back-link" to={backTarget}><ArrowLeft size={18} /> Voltar à carteira</Link>
+
+      <section className="client-hero">
+        <div className="client-heading">
+          <span className="eyebrow"><Pulse size={16} weight="fill" /> Produto conectado</span>
+          <div className="client-title-row">
+            <div>
+              <h1>{product.productName}</h1>
+              <p><Link to={`/empresas/${product.companyId}`}>{product.companyName}</Link> · Dados comerciais ainda não informados</p>
+            </div>
+          </div>
+        </div>
+        <div className="client-value">
+          <span>Receita mensal</span>
+          <strong>Não informado</strong>
+          <small>Aguardando fonte comercial</small>
+        </div>
+      </section>
+
+      <section className="explanation-panel">
+        <div className="explanation-icon"><Lightbulb size={25} weight="duotone" /></div>
+        <div>
+          <span>Estado inicial</span>
+          <h2>Produto cadastrado e pronto para receber telemetria</h2>
+          <p>Risco, score, SLA, NPS, receita e histórico não foram inventados. Esses indicadores permanecerão sem dados até serem fornecidos por suas fontes adequadas.</p>
+        </div>
+      </section>
+
+      <ProductUsageAnalytics key={product.id} clientId={product.id} demoEvents={[]} />
+
+      <section className="panel">
+        <div className="panel-heading"><div><span>Evidências do produto</span><h2>Eventos recentes</h2></div></div>
+        <ClientRecentEvents clientId={product.id} demoEvents={[]} />
+      </section>
+
+      <footer className="mock-footer">
+        <UsersThree size={18} /> Produto de {product.companyName}. Cadastro persistido; dados comerciais ainda não informados.
       </footer>
     </div>
   );

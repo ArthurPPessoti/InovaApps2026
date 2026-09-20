@@ -2,6 +2,8 @@ import type {
   AnalyticsApplication,
   ClientProductAnalyticsSummary,
   ProductAnalyticsSummary,
+  TemporalAnalyticsPeriod,
+  TemporalProductAnalytics,
 } from "./types";
 
 async function request<T>(url: string): Promise<T> {
@@ -11,6 +13,12 @@ async function request<T>(url: string): Promise<T> {
     throw new Error(body.error ?? "Não foi possível carregar o Product Analytics.");
   }
   return body as T;
+}
+
+export function getTemporalProductAnalytics(clientId: string, period: TemporalAnalyticsPeriod) {
+  return request<TemporalProductAnalytics>(
+    `/api/product-analytics/clients/${encodeURIComponent(clientId)}/temporal?period=${period}`,
+  );
 }
 
 export async function listAnalyticsApplications() {

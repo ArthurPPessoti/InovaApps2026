@@ -11,9 +11,8 @@ export function getClientTelemetry(database, clientId, eventLimit = 50) {
   const applications = database.prepare(`
     SELECT
       a.id,
-      a.name,
       a.integration_status AS status,
-      COUNT(e.id) AS eventCount
+      COUNT(CASE WHEN e.data_origin = 'real' THEN e.id END) AS eventCount
     FROM connection_applications a
     LEFT JOIN connection_events e ON e.application_id = a.id
     WHERE a.client_id = ?
@@ -33,7 +32,6 @@ export function getClientTelemetry(database, clientId, eventLimit = 50) {
     SELECT
       e.id,
       e.application_id AS applicationId,
-      a.name AS applicationName,
       e.event_name AS eventName,
       COALESCE(f.name, e.event_name) AS name,
       CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS registered,
@@ -44,7 +42,7 @@ export function getClientTelemetry(database, clientId, eventLimit = 50) {
     LEFT JOIN connection_features f
       ON f.application_id = e.application_id
       AND f.event_name = e.event_name
-    WHERE a.client_id = ?
+    WHERE a.client_id = ? AND e.data_origin = 'real'
     ORDER BY e.received_at DESC
     LIMIT ?
   `).all(clientId, safeLimit).map((event) => ({

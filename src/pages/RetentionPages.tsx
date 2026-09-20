@@ -17,13 +17,20 @@ import {
   UsersThree,
   WarningCircle,
 } from "@phosphor-icons/react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { AddClientSheet } from "../components/AddClientSheet";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
 import { type RegisteredClient, useRegisteredClients } from "../data/clientRegistry";
-import { attentionCompanies, companies, companyPortfolioSummary, getCompany, portfolioProducts, productPortfolioSummary } from "../data/mockData";
+import { attentionCompanies, companies as mockCompanies, companyPortfolioSummary, getCompany, portfolioProducts, productPortfolioSummary } from "../data/mockData";
+import { ProductTelemetryStatus } from "../features/portfolio/ProductTelemetryStatus";
+import { usePortfolio } from "../features/portfolio/PortfolioContext";
+import {
+  disconnectedProductTelemetry,
+  matchesTelemetryFilter,
+  type TelemetryFilter,
+} from "../features/portfolio/productTelemetry";
 import {
   cancellationReasons,
   cancelledClients,
@@ -42,7 +49,7 @@ const statusLabel: Record<SurveyStatus, string> = {
   responded: "Respondida",
 };
 
-const clientSegments = [...new Set(companies.map((company) => company.segment))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+const clientSegments = [...new Set(mockCompanies.map((company) => company.segment))].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
 function NewClientRow({ client, view }: { client: RegisteredClient; view: "produtos" | "empresas" }) {
   return (
@@ -60,11 +67,50 @@ function NewClientRow({ client, view }: { client: RegisteredClient; view: "produ
   );
 }
 
-function ActiveClients({ attentionOnly, view, onViewChange, registered }: { attentionOnly: boolean; view: "produtos" | "empresas"; onViewChange: (view: "produtos" | "empresas") => void; registered: RegisteredClient[] }) {
+function ActiveClients({
+  attentionOnly,
+  view,
+  registered,
+  telemetryFilter,
+  onViewChange,
+  onTelemetryFilterChange,
+}: {
+  attentionOnly: boolean;
+  view: "produtos" | "empresas";
+  registered: RegisteredClient[];
+  telemetryFilter: TelemetryFilter;
+  onViewChange: (view: "produtos" | "empresas") => void;
+  onTelemetryFilterChange: (filter: TelemetryFilter) => void;
+}) {
   const { account } = useAuth();
-  const newClients = attentionOnly ? [] : registered;
-  const visibleProducts = attentionOnly ? portfolioProducts.filter((product) => product.riskLevel !== "Baixo") : portfolioProducts;
+  const { companies, persistedProducts, getProduct } = usePortfolio();
+  const telemetryFor = (productId: string) => getProduct(productId)?.telemetry ?? disconnectedProductTelemetry;
+  const newClients = attentionOnly || telemetryFilter === "connected" ? [] : registered;
+  const visibleProducts = portfolioProducts.filter((product) => (
+    (!attentionOnly || product.riskLevel !== "Baixo")
+    && matchesTelemetryFilter(telemetryFor(product.id), telemetryFilter)
+  ));
   const visibleCompanies = attentionOnly ? attentionCompanies : attentionCompanies;
+  const visiblePersistedProducts = attentionOnly
+    ? []
+    : persistedProducts.filter((product) => matchesTelemetryFilter(product.telemetry, telemetryFilter));
+  const persistedByCompany = useMemo(() => {
+    const groups = new Map<string, typeof persistedProducts>();
+    visiblePersistedProducts.forEach((product) => {
+      groups.set(product.companyId, [...(groups.get(product.companyId) ?? []), product]);
+    });
+    return groups;
+  }, [persistedProducts, visiblePersistedProducts]);
+  const additionalCompanies = [...persistedByCompany.entries()]
+    .filter(([companyId]) => !visibleCompanies.some((portfolio) => portfolio.company.id === companyId))
+    .map(([companyId, companyProducts]) => ({
+      company: companies.find((item) => item.id === companyId),
+      products: companyProducts,
+    }))
+    .filter((item) => item.company);
+  const visibleCount = view === "produtos"
+    ? newClients.length + visibleProducts.length + visiblePersistedProducts.length
+    : newClients.length + visibleCompanies.length + additionalCompanies.length;
 
   return (
     <section className="panel clients-panel lifecycle-list-panel">
@@ -72,7 +118,9 @@ function ActiveClients({ attentionOnly, view, onViewChange, registered }: { atte
         <div>
           <span>{attentionOnly ? "Ordem de ação" : "Amostra monitorada"}</span>
           <h2>{attentionOnly ? `${view === "produtos" ? "Produtos" : "Empresas"} que exigem atenção` : `${view === "produtos" ? "Produtos" : "Empresas"} com contrato ativo`}</h2>
-          <p>{view === "produtos" ? `${visibleProducts.length} exemplos de ${productPortfolioSummary.activeProducts} produtos ativos` : `${visibleCompanies.length} exemplos de ${companyPortfolioSummary.activeCompanies} empresas ativas`}</p>
+          <p>{attentionOnly
+            ? `${visibleCount} registros demonstrativos em atenção`
+            : `${visibleCount} registros disponíveis na carteira consolidada`}</p>
         </div>
         <div className="panel-tools">
           <span id="group-label">Agrupar</span>
@@ -80,14 +128,47 @@ function ActiveClients({ attentionOnly, view, onViewChange, registered }: { atte
             <button type="button" className={view === "produtos" ? "active" : ""} aria-pressed={view === "produtos"} onClick={() => onViewChange("produtos")}>Produto</button>
             <button type="button" className={view === "empresas" ? "active" : ""} aria-pressed={view === "empresas"} onClick={() => onViewChange("empresas")}>Empresa</button>
           </div>
+          {view === "produtos" && (
+            <div className="telemetry-filter" role="group" aria-label="Filtrar produtos por telemetria">
+              {([
+                ["all", "Todos"],
+                ["connected", "Com telemetria"],
+                ["disconnected", "Sem telemetria"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={telemetryFilter === value ? "active" : ""}
+                  aria-pressed={telemetryFilter === value}
+                  onClick={() => onTelemetryFilterChange(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div className="table-scroll">
         <table className="clients-table lifecycle-table">
           <thead><tr><th>{view === "produtos" ? "Produto / empresa" : "Empresa"}</th><th>Segmento</th><th>Risco</th><th>Receita mensal</th><th>Evidência atual</th><th>Ação</th></tr></thead>
-          <tbody>{newClients.map((client) => <NewClientRow key={client.id} client={client} view={view} />)}{view === "produtos" ? visibleProducts.map((product) => { const company = getCompany(product.companyId)!; return (
-            <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small></td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{account?.profile === "technology" ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
-          ); }) : visibleCompanies.map((portfolio) => <tr key={portfolio.company.id}><td><strong>{portfolio.company.name}</strong><small>{portfolio.products.length} produto(s) · {portfolio.company.owner}</small></td><td>{portfolio.company.segment}</td><td><RiskBadge level={portfolio.riskLevel} score={portfolio.riskScore} /></td><td>{formatCurrency(portfolio.monthlyRevenue)}</td><td className="signal-cell">{portfolio.criticalAlert ? `${portfolio.criticalAlert.productName}: ${portfolio.criticalAlert.primarySignal}` : portfolio.products[0]?.primarySignal}</td><td><Link className="table-action" to={`/empresas/${portfolio.company.id}`}>Ver empresa <ArrowRight size={14} /></Link></td></tr>)}</tbody>
+          <tbody>
+            {newClients.map((client) => <NewClientRow key={client.id} client={client} view={view} />)}
+            {view === "produtos" ? <>
+            {visibleProducts.map((product) => { const company = getCompany(product.companyId)!; const telemetry = telemetryFor(product.id); return (
+              <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small><ProductTelemetryStatus telemetry={telemetry} /></td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{account?.profile === "technology" ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
+            ); })}
+            {visiblePersistedProducts.map((product) => (
+              <tr key={product.id}><td><strong>{product.productName}</strong><small>{product.companyName} · Dados comerciais não informados</small><ProductTelemetryStatus telemetry={product.telemetry} /></td><td>Não informado</td><td>Sem dados</td><td className="revenue-cell">Não informado</td><td className="signal-cell">Sem evidência comercial</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
+            ))}
+          </> : <>
+            {visibleCompanies.map((portfolio) => {
+              const extraProducts = persistedByCompany.get(portfolio.company.id)?.length ?? 0;
+              return <tr key={portfolio.company.id}><td><strong>{portfolio.company.name}</strong><small>{portfolio.products.length + extraProducts} produto(s) · {portfolio.company.owner}</small></td><td>{portfolio.company.segment}</td><td><RiskBadge level={portfolio.riskLevel} score={portfolio.riskScore} /></td><td>{formatCurrency(portfolio.monthlyRevenue)}</td><td className="signal-cell">{portfolio.criticalAlert ? `${portfolio.criticalAlert.productName}: ${portfolio.criticalAlert.primarySignal}` : portfolio.products[0]?.primarySignal}</td><td><Link className="table-action" to={`/empresas/${portfolio.company.id}`}>Ver empresa <ArrowRight size={14} /></Link></td></tr>;
+            })}
+            {additionalCompanies.map(({ company, products: companyProducts }) => <tr key={company!.id}><td><strong>{company!.name}</strong><small>{companyProducts.length} produto(s) · Dados comerciais não informados</small></td><td>Não informado</td><td>Sem dados</td><td>Não informado</td><td className="signal-cell">Aguardando dados</td><td><Link className="table-action" to={`/empresas/${company!.id}`}>Ver empresa <ArrowRight size={14} /></Link></td></tr>)}
+          </>}
+          </tbody>
         </table>
       </div>
     </section>
@@ -148,9 +229,14 @@ function CancelledClients() {
 }
 
 export function ClientsPage() {
+  const { persistedProducts, companies } = usePortfolio();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get("status") as ClientTab | null) ?? "atencao";
   const view = searchParams.get("visao") === "empresas" ? "empresas" : "produtos";
+  const telemetryFilter: TelemetryFilter = searchParams.get("telemetria") === "conectada"
+    ? "connected"
+    : searchParams.get("telemetria") === "desconectada" ? "disconnected" : "all";
+  const newPersistedCompanyCount = companies.filter((company) => company.source === "persisted").length;
   const setParam = (key: string, value: string, defaultValue: string) => { const next = new URLSearchParams(searchParams); if (value === defaultValue) next.delete(key); else next.set(key, value); setSearchParams(next, { replace: true }); };
   const { account } = useAuth();
   const registered = useRegisteredClients();
@@ -170,12 +256,25 @@ export function ClientsPage() {
         <button type="button" className="primary-button" onClick={() => setSheetOpen(true)}><Plus size={17} weight="bold" /> Adicionar cliente</button>
       </header>
       <div className="lifecycle-tabs" role="tablist" aria-label="Situação dos clientes">
-        <button type="button" role="tab" aria-selected={tab === "ativos"} className={tab === "ativos" ? "active" : ""} onClick={() => setParam("status", "ativos", "atencao")}>Ativos <span>{(view === "produtos" ? productPortfolioSummary.activeProducts : companyPortfolioSummary.activeCompanies) + registered.length}</span></button>
+        <button type="button" role="tab" aria-selected={tab === "ativos"} className={tab === "ativos" ? "active" : ""} onClick={() => setParam("status", "ativos", "atencao")}>Ativos <span>{view === "produtos" ? productPortfolioSummary.activeProducts + persistedProducts.length + registered.length : companyPortfolioSummary.activeCompanies + newPersistedCompanyCount + registered.length}</span></button>
         <button type="button" role="tab" aria-selected={tab === "atencao"} className={tab === "atencao" ? "active" : ""} onClick={() => setParam("status", "atencao", "atencao")}>Em atenção <span>{view === "produtos" ? productPortfolioSummary.attentionProducts : companyPortfolioSummary.attentionCompanies}</span></button>
         <button type="button" role="tab" aria-selected={tab === "cancelados"} className={tab === "cancelados" ? "active" : ""} onClick={() => setParam("status", "cancelados", "atencao")}>Cancelados <span>{cancelledClients.length}</span></button>
       </div>
       <p className="client-added" role="status">{addedMessage && <><CheckCircle size={16} weight="fill" /> {addedMessage}</>}</p>
-      {tab === "cancelados" ? <CancelledClients /> : <ActiveClients attentionOnly={tab === "atencao"} view={view} onViewChange={(next) => setParam("visao", next, "produtos")} registered={registered} />}
+      {tab === "cancelados" ? <CancelledClients /> : (
+        <ActiveClients
+          attentionOnly={tab === "atencao"}
+          view={view}
+          registered={registered}
+          telemetryFilter={telemetryFilter}
+          onViewChange={(next) => setParam("visao", next, "produtos")}
+          onTelemetryFilterChange={(filter) => setParam(
+            "telemetria",
+            filter === "connected" ? "conectada" : filter === "disconnected" ? "desconectada" : "todas",
+            "todas",
+          )}
+        />
+      )}
       <AddClientSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}

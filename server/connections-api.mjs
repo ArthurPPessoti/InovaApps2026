@@ -21,12 +21,16 @@ import {
 import {
   getClientProductAnalyticsSummary,
   getProductAnalyticsSummary,
+  getTemporalProductAnalytics,
   normalizeAnalyticsFrom,
 } from "./product-analytics.mjs";
+import { getProductTelemetryByProduct } from "./product-telemetry.mjs";
+import { ensureTelemetryEventSchema } from "./telemetry-schema.mjs";
 
 const DATA_DIRECTORY = join(process.cwd(), ".data", "connections");
 const DATABASE_PATH = join(DATA_DIRECTORY, "connections.sqlite");
 const ENCRYPTION_KEY_PATH = join(DATA_DIRECTORY, "credential.key");
+const LEGACY_APPLICATION_TYPE_VALUE = "internal";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -119,7 +123,6 @@ function openDatabase() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       client_name TEXT NOT NULL,
-      application_type TEXT NOT NULL CHECK (application_type IN ('internal', 'multiuser')),
       integration_status TEXT NOT NULL DEFAULT 'waiting_integration'
         CHECK (integration_status IN ('waiting_integration', 'connected')),
       credential_hash TEXT NOT NULL,
@@ -149,9 +152,29 @@ function openDatabase() {
       FOREIGN KEY(application_id) REFERENCES connection_applications(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS portfolio_companies (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      normalized_name TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS portfolio_products (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      company_name TEXT NOT NULL,
+      name TEXT NOT NULL,
+      normalized_name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(company_id, normalized_name)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_connection_events_application_time
       ON connection_events(application_id, received_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_portfolio_products_company
+      ON portfolio_products(company_id);
   `);
+  ensureTelemetryEventSchema(database);
   const applicationColumns = database.prepare("PRAGMA table_info(connection_applications)").all();
   if (!applicationColumns.some((column) => column.name === "client_id")) {
     database.exec("ALTER TABLE connection_applications ADD COLUMN client_id TEXT;");
@@ -160,6 +183,24 @@ function openDatabase() {
     CREATE INDEX IF NOT EXISTS idx_connection_applications_client
       ON connection_applications(client_id);
   `);
+  const duplicateProductConnections = database.prepare(`
+    SELECT client_id
+    FROM connection_applications
+    WHERE client_id IS NOT NULL
+    GROUP BY client_id
+    HAVING COUNT(*) > 1
+  `).all();
+  if (duplicateProductConnections.length === 0) {
+    database.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_connection_applications_unique_client
+        ON connection_applications(client_id)
+        WHERE client_id IS NOT NULL;
+    `);
+  } else {
+    console.warn(
+      "[connections-api] Índice único por produto não criado: há client_id duplicado. Nenhum registro foi alterado.",
+    );
+  }
   return database;
 }
 
@@ -168,8 +209,8 @@ function listApplications(database) {
     SELECT
       a.*,
       COUNT(DISTINCT f.id) AS feature_count,
-      COUNT(DISTINCT e.id) AS event_count,
-      MAX(e.received_at) AS last_event_at
+      COUNT(DISTINCT CASE WHEN e.data_origin = 'real' THEN e.id END) AS event_count,
+      MAX(CASE WHEN e.data_origin = 'real' THEN e.received_at END) AS last_event_at
     FROM connection_applications a
     LEFT JOIN connection_features f ON f.application_id = a.id
     LEFT JOIN connection_events e ON e.application_id = a.id
@@ -181,10 +222,8 @@ function listApplications(database) {
 function mapApplication(row) {
   return {
     id: row.id,
-    name: row.name,
     clientId: row.client_id ?? null,
     client: row.client_id ? row.client_name : null,
-    type: row.application_type,
     status: row.integration_status,
     createdAt: row.created_at,
     featureCount: Number(row.feature_count ?? 0),
@@ -198,8 +237,8 @@ function getApplication(database, applicationId, encryptionKey, includeCredentia
     SELECT
       a.*,
       COUNT(DISTINCT f.id) AS feature_count,
-      COUNT(DISTINCT e.id) AS event_count,
-      MAX(e.received_at) AS last_event_at
+      COUNT(DISTINCT CASE WHEN e.data_origin = 'real' THEN e.id END) AS event_count,
+      MAX(CASE WHEN e.data_origin = 'real' THEN e.received_at END) AS last_event_at
     FROM connection_applications a
     LEFT JOIN connection_features f ON f.application_id = a.id
     LEFT JOIN connection_events e ON e.application_id = a.id
@@ -229,35 +268,107 @@ function insertApplication(database, encryptionKey, input, preservedId) {
   const encryptedCredential = encryptCredential(credential, encryptionKey);
   const applicationId = preservedId ?? createId("app");
 
-  database.prepare(`
-    INSERT INTO connection_applications (
-      id, name, client_name, client_id, application_type, integration_status,
-      credential_hash, credential_encrypted, credential_iv, credential_tag,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, 'waiting_integration', ?, ?, ?, ?, ?, ?)
-  `).run(
+  const applicationColumns = database.prepare("PRAGMA table_info(connection_applications)").all();
+  const hasLegacyTypeColumn = applicationColumns.some((column) => column.name === "application_type");
+  const sharedValues = [
     applicationId,
-    input.name,
+    input.legacyName,
     input.client,
     input.clientId ?? null,
-    input.type,
     hashCredential(credential),
     encryptedCredential.encrypted,
     encryptedCredential.iv,
     encryptedCredential.tag,
     input.createdAt ?? now,
     now,
-  );
+  ];
+
+  if (hasLegacyTypeColumn) {
+    // Coluna legada mantida apenas por compatibilidade; não possui efeito.
+    database.prepare(`
+      INSERT INTO connection_applications (
+        id, name, client_name, client_id, application_type, integration_status,
+        credential_hash, credential_encrypted, credential_iv, credential_tag,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, 'waiting_integration', ?, ?, ?, ?, ?, ?)
+    `).run(
+      ...sharedValues.slice(0, 4),
+      LEGACY_APPLICATION_TYPE_VALUE,
+      ...sharedValues.slice(4),
+    );
+  } else {
+    database.prepare(`
+      INSERT INTO connection_applications (
+        id, name, client_name, client_id, integration_status,
+        credential_hash, credential_encrypted, credential_iv, credential_tag,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 'waiting_integration', ?, ?, ?, ?, ?, ?)
+    `).run(...sharedValues);
+  }
 
   return applicationId;
 }
 
 function normalizeApplicationInput(body) {
-  const name = typeof body.name === "string" ? body.name.trim() : "";
   const client = typeof body.client === "string" ? body.client.trim() : "";
   const clientId = typeof body.clientId === "string" ? body.clientId.trim() : "";
-  const type = body.type === "internal" || body.type === "multiuser" ? body.type : "";
-  return { name, client, clientId, type };
+  const productName = typeof body.productName === "string" ? body.productName.trim() : "";
+  return { client, clientId, productName };
+}
+
+function productAlreadyConnected(database, clientId, excludedApplicationId = null) {
+  if (!clientId) return null;
+  return excludedApplicationId
+    ? database.prepare(`
+      SELECT id FROM connection_applications WHERE client_id = ? AND id <> ?
+    `).get(clientId, excludedApplicationId)
+    : database.prepare(`
+      SELECT id FROM connection_applications WHERE client_id = ?
+    `).get(clientId);
+}
+
+function normalizeLookupName(value) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
+}
+
+function normalizeNewProductInput(body) {
+  if (!body.newProduct || typeof body.newProduct !== "object") return null;
+  const productName = typeof body.newProduct.name === "string" ? body.newProduct.name.trim() : "";
+  const company = body.newProduct.company && typeof body.newProduct.company === "object"
+    ? body.newProduct.company
+    : {};
+  const companyMode = company.mode === "existing" || company.mode === "new" ? company.mode : "";
+  const companyId = typeof company.id === "string" ? company.id.trim() : "";
+  const companyName = typeof company.name === "string" ? company.name.trim() : "";
+  return { productName, companyMode, companyId, companyName };
+}
+
+function listPersistedPortfolio(database) {
+  const companies = database.prepare(`
+    SELECT id, name, created_at AS createdAt
+    FROM portfolio_companies
+    ORDER BY name COLLATE NOCASE ASC
+  `).all();
+  const products = database.prepare(`
+    SELECT
+      id,
+      company_id AS companyId,
+      company_name AS companyName,
+      name AS productName,
+      created_at AS createdAt
+    FROM portfolio_products
+    ORDER BY created_at ASC
+  `).all();
+  return {
+    companies,
+    products,
+    telemetryByProduct: getProductTelemetryByProduct(database),
+  };
 }
 
 function normalizeFeatureInput(body) {
@@ -274,19 +385,137 @@ async function handleApi(request, response, database, encryptionKey) {
   const url = new URL(request.url ?? "/", "http://localhost");
   const method = request.method ?? "GET";
 
+  if (method === "GET" && url.pathname === "/api/portfolio") {
+    sendJson(response, 200, listPersistedPortfolio(database));
+    return true;
+  }
+
   if (method === "GET" && url.pathname === "/api/connections/applications") {
     sendJson(response, 200, { applications: listApplications(database) });
     return true;
   }
 
   if (method === "POST" && url.pathname === "/api/connections/applications") {
-    const input = normalizeApplicationInput(await readJson(request));
-    if (!input.name || !input.client || !input.clientId || !input.type) {
-      sendJson(response, 400, { error: "Informe nome, cliente relacionado e tipo da aplicação." });
+    const body = await readJson(request);
+    const input = normalizeApplicationInput(body);
+    const newProduct = normalizeNewProductInput(body);
+
+    if (newProduct) {
+      if (!newProduct.productName || !newProduct.companyMode || !newProduct.companyName
+        || (newProduct.companyMode === "existing" && !newProduct.companyId)) {
+        sendJson(response, 400, { error: "Informe a empresa e o nome do novo produto." });
+        return true;
+      }
+
+      const now = new Date().toISOString();
+      let companyId = newProduct.companyId;
+      let createdCompany = false;
+      database.exec("BEGIN IMMEDIATE");
+      try {
+        if (newProduct.companyMode === "new") {
+          const normalizedCompanyName = normalizeLookupName(newProduct.companyName);
+          const existingCompany = database.prepare(`
+            SELECT id, name FROM portfolio_companies WHERE normalized_name = ?
+          `).get(normalizedCompanyName);
+          if (existingCompany) {
+            database.exec("ROLLBACK");
+            sendJson(response, 409, {
+              error: "Esta empresa já foi cadastrada. Selecione-a como empresa existente.",
+              code: "COMPANY_EXISTS",
+              existingCompany,
+            });
+            return true;
+          }
+          companyId = createId("company");
+          database.prepare(`
+            INSERT INTO portfolio_companies (id, name, normalized_name, created_at)
+            VALUES (?, ?, ?, ?)
+          `).run(companyId, newProduct.companyName, normalizedCompanyName, now);
+          createdCompany = true;
+        }
+
+        const normalizedProductName = normalizeLookupName(newProduct.productName);
+        const existingProduct = database.prepare(`
+          SELECT id, name AS productName, company_id AS companyId, company_name AS companyName
+          FROM portfolio_products
+          WHERE company_id = ? AND normalized_name = ?
+        `).get(companyId, normalizedProductName);
+        if (existingProduct) {
+          database.exec("ROLLBACK");
+          sendJson(response, 409, {
+            error: "Este produto já existe para a empresa selecionada. Selecione o produto existente.",
+            code: "PRODUCT_EXISTS",
+            existingProduct,
+          });
+          return true;
+        }
+
+        const productId = createId("product");
+        database.prepare(`
+          INSERT INTO portfolio_products (
+            id, company_id, company_name, name, normalized_name, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          productId,
+          companyId,
+          newProduct.companyName,
+          newProduct.productName,
+          normalizedProductName,
+          now,
+        );
+
+        const client = `${newProduct.productName} · ${newProduct.companyName}`;
+        const applicationId = insertApplication(database, encryptionKey, {
+          legacyName: newProduct.productName,
+          client,
+          clientId: productId,
+        });
+        database.exec("COMMIT");
+
+        sendJson(response, 201, {
+          application: getApplication(database, applicationId, encryptionKey),
+          portfolio: {
+            company: { id: companyId, name: newProduct.companyName, created: createdCompany },
+            product: { id: productId, productName: newProduct.productName, companyId, companyName: newProduct.companyName },
+          },
+        });
+        return true;
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+    }
+
+    if (!input.productName || !input.client || !input.clientId) {
+      sendJson(response, 400, { error: "Selecione um produto válido da carteira." });
       return true;
     }
 
-    const applicationId = insertApplication(database, encryptionKey, input);
+    if (productAlreadyConnected(database, input.clientId)) {
+      sendJson(response, 409, {
+        error: "Este produto já possui uma conexão técnica.",
+        code: "PRODUCT_ALREADY_CONNECTED",
+      });
+      return true;
+    }
+
+    let applicationId;
+    try {
+      applicationId = insertApplication(database, encryptionKey, {
+        legacyName: input.productName,
+        client: input.client,
+        clientId: input.clientId,
+      });
+    } catch (error) {
+      if (String(error).includes("UNIQUE")) {
+        sendJson(response, 409, {
+          error: "Este produto já possui uma conexão técnica.",
+          code: "PRODUCT_ALREADY_CONNECTED",
+        });
+        return true;
+      }
+      throw error;
+    }
     sendJson(response, 201, { application: getApplication(database, applicationId, encryptionKey) });
     return true;
   }
@@ -299,17 +528,22 @@ async function handleApi(request, response, database, encryptionKey) {
     database.exec("BEGIN IMMEDIATE");
     try {
       for (const candidate of applications) {
-        const input = normalizeApplicationInput(candidate ?? {});
-        if (!input.name || !input.client || !input.type) continue;
+        const legacyName = typeof candidate?.name === "string" ? candidate.name.trim() : "";
+        const client = typeof candidate?.client === "string" ? candidate.client.trim() : "";
+        const clientId = typeof candidate?.clientId === "string" ? candidate.clientId.trim() : "";
+        if (!legacyName || !client) continue;
 
         const preservedId = typeof candidate.id === "string" && /^app_[a-zA-Z0-9]+$/.test(candidate.id)
           ? candidate.id
           : createId("app");
         const alreadyExists = database.prepare("SELECT 1 FROM connection_applications WHERE id = ?").get(preservedId);
         if (alreadyExists) continue;
+        if (clientId && productAlreadyConnected(database, clientId)) continue;
 
         const applicationId = insertApplication(database, encryptionKey, {
-          ...input,
+          legacyName,
+          client,
+          clientId,
           createdAt: typeof candidate.createdAt === "string" ? candidate.createdAt : undefined,
         }, preservedId);
 
@@ -398,7 +632,7 @@ async function handleApi(request, response, database, encryptionKey) {
         user_id AS userId,
         received_at AS receivedAt
       FROM connection_events
-      WHERE application_id = ?
+      WHERE application_id = ? AND data_origin = 'real'
       ORDER BY received_at DESC
       LIMIT 200
     `).all(eventsMatch[1]);
@@ -412,17 +646,37 @@ async function handleApi(request, response, database, encryptionKey) {
     const clientId = typeof body.clientId === "string" ? body.clientId.trim() : "";
     const clientName = typeof body.client === "string" ? body.client.trim() : "";
     if (!clientId || clientId.length > 128 || !clientName || clientName.length > 200) {
-      sendJson(response, 400, { error: "Selecione um cliente válido da carteira." });
+      sendJson(response, 400, { error: "Selecione um produto válido da carteira." });
       return true;
     }
 
-    const linked = linkApplicationToClient(
-      database,
-      clientLinkMatch[1],
-      clientId,
-      clientName,
-      new Date().toISOString(),
-    );
+    if (productAlreadyConnected(database, clientId, clientLinkMatch[1])) {
+      sendJson(response, 409, {
+        error: "Este produto já possui uma conexão técnica.",
+        code: "PRODUCT_ALREADY_CONNECTED",
+      });
+      return true;
+    }
+
+    let linked;
+    try {
+      linked = linkApplicationToClient(
+        database,
+        clientLinkMatch[1],
+        clientId,
+        clientName,
+        new Date().toISOString(),
+      );
+    } catch (error) {
+      if (String(error).includes("UNIQUE")) {
+        sendJson(response, 409, {
+          error: "Este produto já possui uma conexão técnica.",
+          code: "PRODUCT_ALREADY_CONNECTED",
+        });
+        return true;
+      }
+      throw error;
+    }
     if (!linked) {
       sendJson(response, 404, { error: "Aplicação não encontrada." });
       return true;
@@ -483,6 +737,37 @@ async function handleApi(request, response, database, encryptionKey) {
     return true;
   }
 
+  const temporalAnalyticsMatch = url.pathname.match(/^\/api\/product-analytics\/clients\/([^/]+)\/temporal$/);
+  if (method === "GET" && temporalAnalyticsMatch) {
+    let clientId;
+    try {
+      clientId = decodeURIComponent(temporalAnalyticsMatch[1]).trim();
+    } catch {
+      sendJson(response, 400, { error: "Identificador de produto inválido." });
+      return true;
+    }
+    if (!clientId || clientId.length > 128) {
+      sendJson(response, 400, { error: "Identificador de produto inválido." });
+      return true;
+    }
+
+    try {
+      const summary = getTemporalProductAnalytics(
+        database,
+        clientId,
+        url.searchParams.get("period") ?? "monthly",
+      );
+      sendJson(response, 200, summary);
+    } catch (error) {
+      if (error instanceof TypeError) {
+        sendJson(response, 400, { error: error.message });
+        return true;
+      }
+      throw error;
+    }
+    return true;
+  }
+
   const clientTelemetryMatch = url.pathname.match(/^\/api\/clients\/([^/]+)\/telemetry$/);
   if (method === "GET" && clientTelemetryMatch) {
     let clientId;
@@ -538,8 +823,9 @@ async function handleApi(request, response, database, encryptionKey) {
     database.exec("BEGIN IMMEDIATE");
     try {
       database.prepare(`
-        INSERT INTO connection_events (id, application_id, event_name, user_id, received_at)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO connection_events (
+          id, application_id, event_name, user_id, received_at, data_origin
+        ) VALUES (?, ?, ?, ?, ?, 'real')
       `).run(eventId, applicationId, eventName, userId, receivedAt);
       database.prepare(`
         UPDATE connection_applications
@@ -598,3 +884,5 @@ export function connectionsApiPlugin() {
     configurePreviewServer: installMiddleware,
   };
 }
+
+export { handleApi };

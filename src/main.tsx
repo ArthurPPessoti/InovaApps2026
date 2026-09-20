@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
+import { PortfolioProvider } from "./features/portfolio/PortfolioContext";
 import { ManagementProvider } from "./management/ManagementContext";
 import { RetentionProvider } from "./retention/RetentionContext";
 import "./styles.css";
@@ -12,9 +13,11 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AuthProvider>
         <ManagementProvider>
-          <RetentionProvider>
-            <App />
-          </RetentionProvider>
+          <PortfolioProvider>
+            <RetentionProvider>
+              <App />
+            </RetentionProvider>
+          </PortfolioProvider>
         </ManagementProvider>
       </AuthProvider>
     </BrowserRouter>

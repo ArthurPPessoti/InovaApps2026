@@ -1,4 +1,4 @@
-import { ChartBar, Database, Pulse, SpinnerGap, SquaresFour, UsersThree, WarningCircle } from "@phosphor-icons/react";
+import { ArrowRight, ChartBar, Database, Pulse, SpinnerGap, SquaresFour, UsersThree, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { TrackingEvent } from "../../types";
@@ -50,8 +50,15 @@ export function ProductUsageAnalytics({ clientId, demoEvents }: { clientId: stri
           <h2 id="product-usage-title">Uso do produto</h2>
           <p>{summary && !hasRealApplications
             ? "Amostra demonstrativa específica deste produto; não representa eventos recebidos por integração."
-            : "Métricas calculadas somente a partir dos eventos recebidos pelas aplicações vinculadas a este produto."}</p>
+            : summary?.dataOrigins.includesDemo
+              ? "Análise baseada em histórico demonstrativo e telemetria real armazenados para este produto."
+              : "Métricas calculadas somente a partir dos eventos que correspondem às funcionalidades monitoradas deste produto."}</p>
         </div>
+        {hasRealApplications && (
+          <Link className="secondary-button product-analytics-full-link" to={`/clientes/${clientId}/analytics`}>
+            Ver análise completa <ArrowRight size={16} />
+          </Link>
+        )}
       </header>
 
       {error ? (
@@ -64,19 +71,19 @@ export function ProductUsageAnalytics({ clientId, demoEvents }: { clientId: stri
         <>
           <div className="product-analytics-filters product-analytics-filters--embedded" aria-label="Filtros de uso do produto">
             <label>
-              <span>Aplicação</span>
+              <span>Conexão técnica</span>
               {applications.length > 1 ? (
                 <select value={applicationId} onChange={(event) => setApplicationId(event.target.value)}>
-                  <option value="">Todas as aplicações</option>
+                  <option value="">Todas as conexões</option>
                   {applications.map((application) => (
-                    <option key={application.id} value={application.id}>{application.name}</option>
+                    <option key={application.id} value={application.id}>{application.id}</option>
                   ))}
                 </select>
               ) : (
-                <div className="product-analytics-application-readonly">{onlyApplication?.name}</div>
+                <div className="product-analytics-application-readonly">{onlyApplication?.id}</div>
               )}
               {onlyApplication && <small>Application ID: {onlyApplication.id}</small>}
-              {applications.length > 1 && <small>{applicationId || "Agregando apenas as aplicações deste produto"}</small>}
+              {applications.length > 1 && <small>{applicationId || "Agregando apenas as conexões deste produto"}</small>}
             </label>
             <label>
               <span>Período</span>
@@ -88,7 +95,7 @@ export function ProductUsageAnalytics({ clientId, demoEvents }: { clientId: stri
           </div>
           <ProductAnalyticsResults
             summary={summary}
-            emptyMessage="Selecione outro período ou envie eventos para uma aplicação vinculada a este produto."
+            emptyMessage="Selecione outro período ou envie eventos correspondentes às funcionalidades monitoradas deste produto."
           />
         </>
       ) : null}

@@ -6,6 +6,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { usePortfolio } from "../portfolio/PortfolioContext";
 import { periodOptions, periodStart } from "./periods";
 import { ProductAnalyticsResults } from "./ProductAnalyticsResults";
 import {
@@ -20,6 +21,7 @@ import type {
 import "./product-analytics.css";
 
 export function ProductAnalyticsFeature() {
+  const { getProduct } = usePortfolio();
   const [applications, setApplications] = useState<AnalyticsApplication[]>([]);
   const [applicationId, setApplicationId] = useState("");
   const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
@@ -35,7 +37,7 @@ export function ProductAnalyticsFeature() {
         setApplications(items);
         setApplicationId((current) => current || items[0]?.id || "");
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar as aplicações.");
+        setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar as conexões.");
       } finally {
         setLoadingApplications(false);
       }
@@ -81,16 +83,20 @@ export function ProductAnalyticsFeature() {
 
       <section className="product-analytics-filters" aria-label="Filtros do Product Analytics">
         <label>
-          <span>Aplicação</span>
+          <span>Produto conectado</span>
           <select
             value={applicationId}
             onChange={(event) => setApplicationId(event.target.value)}
             disabled={loadingApplications || applications.length === 0}
           >
-            {applications.length === 0 && <option value="">Nenhuma aplicação cadastrada</option>}
-            {applications.map((application) => (
-              <option key={application.id} value={application.id}>{application.name} · {application.client ?? "Cliente não vinculado"}</option>
-            ))}
+            {applications.length === 0 && <option value="">Nenhum produto conectado</option>}
+            {applications.map((application) => {
+              const product = application.clientId ? getProduct(application.clientId) : undefined;
+              const label = product
+                ? `${product.productName} · ${product.companyName}`
+                : "Produto não vinculado";
+              return <option key={application.id} value={application.id}>{label} · {application.id}</option>;
+            })}
           </select>
           {applicationId && <small>Application ID: {applicationId}</small>}
         </label>
@@ -110,8 +116,8 @@ export function ProductAnalyticsFeature() {
       ) : applications.length === 0 ? (
         <section className="product-analytics-empty">
           <Database size={36} weight="duotone" />
-          <h2>Nenhuma aplicação cadastrada</h2>
-          <p>Cadastre uma aplicação em Conexões antes de analisar seus eventos.</p>
+          <h2>Nenhum produto conectado</h2>
+          <p>Conecte um produto em Conexões antes de analisar seus eventos.</p>
           <Link to="/conexoes">Ir para Conexões</Link>
         </section>
       ) : summary ? (

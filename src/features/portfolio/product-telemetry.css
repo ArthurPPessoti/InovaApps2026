@@ -1,0 +1,75 @@
+.product-telemetry-status {
+  display: grid;
+  margin-top: 8px;
+  gap: 3px;
+}
+
+.product-telemetry-status__connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.product-telemetry-status__connection i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.product-telemetry-status--connected .product-telemetry-status__connection {
+  color: var(--green-400);
+}
+
+.product-telemetry-status--connected .product-telemetry-status__connection i {
+  border-color: var(--green-400);
+  background: var(--green-400);
+  box-shadow: 0 0 8px rgba(0, 255, 145, 0.42);
+}
+
+.product-telemetry-status--disconnected .product-telemetry-status__connection {
+  color: var(--gray-400);
+}
+
+.product-telemetry-status > small {
+  color: var(--gray-500) !important;
+  font-size: 9px !important;
+}
+
+.telemetry-filter {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(0, 10, 30, 0.42);
+}
+
+.telemetry-filter button {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--gray-500);
+  background: transparent;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.telemetry-filter button.active {
+  color: var(--cyan-400);
+  background: rgba(0, 243, 255, 0.08);
+}
+
+@media (max-width: 720px) {
+  .telemetry-filter {
+    width: 100%;
+  }
+
+  .telemetry-filter button {
+    flex: 1;
+  }
+}
