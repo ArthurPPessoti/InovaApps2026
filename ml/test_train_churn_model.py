@@ -39,6 +39,17 @@ class ChurnTrainingTest(unittest.TestCase):
         self.assertIn("usage", result["predictions"][0]["evidence"])
         self.assertIn("service", result["predictions"][0]["evidence"])
 
+    def test_metric_configuration_filters_features_and_is_reported(self):
+        mapping = {"metrics": {
+            "uso_plataforma_pct": {"enabled": False, "weight": 1},
+            "dias_atraso_pagamento": {"enabled": True, "weight": 2},
+        }}
+        prepared = prepare_data(WORKBOOK, mapping=mapping)
+        self.assertFalse(any(feature.startswith("uso_plataforma_pct") for feature in prepared.numeric_features))
+        result = train(WORKBOOK, mapping=mapping)
+        self.assertFalse(result["model"]["configuredMetrics"]["uso_plataforma_pct"]["enabled"])
+        self.assertEqual(result["model"]["configuredMetrics"]["dias_atraso_pagamento"]["weight"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,14 +2,18 @@ import {
   ArrowLeft,
   ArrowRight,
   ChartBar,
+  ChatCircleDots,
   CheckCircle,
   CurrencyCircleDollar,
   Database,
   FileXls,
   Funnel,
   MagnifyingGlass,
+  PaperPlaneTilt,
   ShieldWarning,
+  ShieldCheck,
   SlidersHorizontal,
+  Sparkle,
   Table,
   TrendDown,
   UploadSimple,
@@ -21,7 +25,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { useAuth } from "../auth/AuthContext";
 import { churnBandLabel, churnBandThreshold, isAttention, primaryRiskReason, segmentRisk, suggestedActions } from "../churn/analysisAdapters";
 import { analyzeSpreadsheet, inspectSpreadsheet, saveChurnAnalysis, useChurnAnalysis } from "../churn/churnAnalysis";
-import { datasetLabels, mappingProgress, requiredFields, suggestSpreadsheetMapping } from "../churn/spreadsheetMapping";
+import { datasetLabels, mappingProgress, metricFields, requiredFields, suggestSpreadsheetMapping, withDefaultMetricSettings } from "../churn/spreadsheetMapping";
 import { clientTechnologyTelemetry } from "../churn/technologySignals";
 import type { CanonicalDataset, ChurnBand, SpreadsheetInspection, SpreadsheetMapping } from "../churn/types";
 import { formatCurrency } from "../components/StatusUI";
@@ -37,6 +41,74 @@ function percentage(value: number | null) {
 
 function valueOrDash(value: number | null, suffix = "") {
   return value == null ? "Não informado" : `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(value)}${suffix}`;
+}
+
+type ChurnAssistantMessage = { role: "assistant" | "user"; text: string };
+type DataStep = 1 | 2 | 3;
+type DataMode = "guided" | "manual";
+
+const normalizeText = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const weightLabel = (weight: number) => weight >= 2 ? "Crítico" : weight >= 1.5 ? "Alto" : weight <= 0.5 ? "Baixo" : "Normal";
+const activeMetricCount = (mapping: SpreadsheetMapping | null) => metricFields.filter((metric) => mapping?.metrics?.[metric.key]?.enabled !== false).length;
+const weightOptions = [
+  { label: "Muito baixa", value: 0.5, badge: "1" },
+  { label: "Baixa", value: 0.75, badge: "2" },
+  { label: "Média", value: 1, badge: "4" },
+  { label: "Alta", value: 1.5, badge: "7" },
+  { label: "Crítica", value: 2, badge: "10" },
+];
+const metricByKey = Object.fromEntries(metricFields.map((metric) => [metric.key, metric]));
+const riskDirectionOptions = [
+  { label: "Maior é pior", value: "HIGH_IS_RISK" as const },
+  { label: "Menor é pior", value: "LOW_IS_RISK" as const },
+  { label: "Não usar", value: "DISABLED" as const },
+];
+
+function roleLabelFor(field: string) {
+  if (field === "valor_mensal") return "Valor financeiro";
+  if (["situacao", "mes_cancelamento"].includes(field)) return "Desfecho";
+  if (["cliente_id", "mes_ref"].includes(field)) return "Chave / contexto";
+  return metricByKey[field] ? "Indicador" : "Contexto";
+}
+
+function assistantReading(inspection: SpreadsheetInspection, mapping: SpreadsheetMapping) {
+  const priority = metricFields
+    .filter((metric) => mapping.metrics?.[metric.key]?.enabled !== false)
+    .slice(0, 4)
+    .map((metric) => `${metric.label}: ${weightLabel(mapping.metrics?.[metric.key]?.weight ?? metric.defaultWeight)}`);
+  return `Li ${inspection.sheets.length} aba(s), ${inspection.sheets.reduce((sum, sheet) => sum + sheet.rows, 0)} linhas e ${inspection.sheets.reduce((sum, sheet) => sum + sheet.columns.length, 0)} colunas. Mantive ${activeMetricCount(mapping)} métrica(s) ativas. Prioridades iniciais: ${priority.join(", ")}. Você pode pedir "dar mais peso ao financeiro", "ignorar NPS" ou "priorizar atendimento".`;
+}
+
+function tuneMetricsFromText(mapping: SpreadsheetMapping, text: string) {
+  const normalized = normalizeText(text);
+  const groups = [
+    { terms: ["financeiro", "atraso", "pagamento", "mrr", "receita"], keys: ["dias_atraso_pagamento", "valor_mensal"], label: "financeiro" },
+    { terms: ["atendimento", "sla", "chamado", "ticket", "resolucao"], keys: ["pct_sla_cumprido", "chamados_abertos", "chamados_criticos", "chamados_reabertos", "tempo_medio_resolucao_h"], label: "atendimento" },
+    { terms: ["relacionamento", "nps", "reuniao", "reclamacao"], keys: ["latest_nps", "latest_nps_classification", "months_since_nps", "meeting_completion", "reclamacoes_formais"], label: "relacionamento" },
+    { terms: ["uso", "utilizacao", "plataforma"], keys: ["uso_plataforma_pct"], label: "uso" },
+  ];
+  const configured = withDefaultMetricSettings(mapping);
+  const nextMetrics = { ...(configured.metrics ?? {}) };
+  const matched = groups.filter((group) => group.terms.some((term) => normalized.includes(term)));
+  const disabling = ["ignorar", "desativar", "tirar", "remover", "nao usar"].some((term) => normalized.includes(term));
+  const high = ["mais", "priorizar", "alto", "critico", "aumentar"].some((term) => normalized.includes(term));
+  const low = ["menos", "baixo", "reduzir"].some((term) => normalized.includes(term));
+  matched.forEach((group) => group.keys.forEach((key) => {
+    const current = nextMetrics[key] ?? { enabled: true, weight: 1 };
+    nextMetrics[key] = { enabled: disabling ? false : true, weight: disabling ? current.weight : high ? 1.5 : low ? 0.5 : current.weight };
+  }));
+  return { mapping: { ...configured, metrics: nextMetrics }, matched: matched.map((group) => group.label), action: disabling ? "desativei" : high ? "aumentei" : low ? "reduzi" : "mantive" };
+}
+
+function defaultChurnMapping(): SpreadsheetMapping {
+  const canonical = Object.keys(requiredFields) as CanonicalDataset[];
+  return withDefaultMetricSettings({
+    sheets: Object.fromEntries(canonical.map((dataset) => [dataset, dataset])) as Record<CanonicalDataset, string>,
+    columns: Object.fromEntries(canonical.map((dataset) => [
+      dataset,
+      Object.fromEntries(requiredFields[dataset].map((field) => [field.key, field.key])),
+    ])) as Record<CanonicalDataset, Record<string, string>>,
+  });
 }
 
 function DataRequiredState({ loading = false }: { loading?: boolean }) {
@@ -132,10 +204,15 @@ export function DataPage() {
   const [sourceName, setSourceName] = useState(account?.spreadsheet?.sourceName ?? "Base de clientes");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inspection, setInspection] = useState<SpreadsheetInspection | null>(null);
-  const [mapping, setMapping] = useState<SpreadsheetMapping | null>(account?.spreadsheet?.mapping ?? null);
+  const [mapping, setMapping] = useState<SpreadsheetMapping | null>(account?.spreadsheet?.mapping ? withDefaultMetricSettings(account.spreadsheet.mapping) : null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [processing, setProcessing] = useState<"" | "inspect" | "analyze">("");
+  const [step, setStep] = useState<DataStep>(1);
+  const [mode, setMode] = useState<DataMode>("guided");
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<ChurnAssistantMessage[]>([{ role: "assistant", text: "Envie a base ou edite a configuração ativa. Eu ajudo a ajustar métricas e pesos sem desconectar as outras abas." }]);
+  const [editingActive, setEditingActive] = useState(false);
   const datasets = Object.keys(requiredFields) as CanonicalDataset[];
   const progress = mapping ? mappingProgress(mapping) : null;
 
@@ -145,13 +222,18 @@ export function DataPage() {
     setMapping(null);
     setError("");
     setSuccess("");
+    setEditingActive(false);
+    setStep(1);
     if (!file) return;
     if (!/\.(xlsx|csv)$/i.test(file.name)) return setError("Selecione um arquivo .xlsx ou .csv.");
     setProcessing("inspect");
     try {
       const result = await inspectSpreadsheet(file);
       setInspection(result);
-      setMapping(suggestSpreadsheetMapping(result));
+      const suggested = suggestSpreadsheetMapping(result);
+      setMapping(suggested);
+      setMessages([{ role: "assistant", text: assistantReading(result, suggested) }]);
+      setStep(2);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível ler a estrutura do arquivo.");
     } finally {
@@ -168,12 +250,60 @@ export function DataPage() {
         ...mapping.columns,
         [dataset]: Object.fromEntries(requiredFields[dataset].map((field) => [field.key, columns.includes(field.key) ? field.key : ""])),
       },
+      metrics: mapping.metrics,
     });
   };
 
   const changeColumn = (dataset: CanonicalDataset, field: string, column: string) => {
     if (!mapping) return;
     setMapping({ ...mapping, columns: { ...mapping.columns, [dataset]: { ...mapping.columns[dataset], [field]: column } } });
+  };
+
+  const changeMetric = (metric: string, patch: Partial<{ enabled: boolean; weight: number; riskType: "HIGH_IS_RISK" | "LOW_IS_RISK" }>) => {
+    if (!mapping) return;
+    const configured = withDefaultMetricSettings(mapping);
+    setMapping({
+      ...configured,
+      metrics: {
+        ...configured.metrics,
+        [metric]: { ...configured.metrics![metric], ...patch },
+      },
+    });
+  };
+
+  const editActiveConfig = () => {
+    if (!account?.spreadsheet) return;
+    const active = withDefaultMetricSettings(account.spreadsheet.mapping ?? defaultChurnMapping());
+    setMapping(active);
+    setInspection(null);
+    setSelectedFile(null);
+    setSourceName(account.spreadsheet.sourceName ?? sourceName);
+    setEditingActive(true);
+    setMode("guided");
+    setStep(2);
+    setError("");
+    setSuccess("");
+    setMessages([{ role: "assistant", text: `Carreguei a configuração ativa de ${account.spreadsheet.fileName}. Você pode ajustar pesos agora; para recalcular os resultados, reenvie a mesma planilha e confirme a análise.` }]);
+  };
+
+  const saveActiveConfig = () => {
+    if (!account?.spreadsheet || !mapping) return;
+    updateSpreadsheet(account.spreadsheet.fileName, account.spreadsheet.rows, sourceName.trim() || account.spreadsheet.sourceName, withDefaultMetricSettings(mapping));
+    setSuccess("Configuração salva. Reenvie a planilha para recalcular as abas com esses pesos.");
+  };
+
+  const ask = (event: FormEvent) => {
+    event.preventDefault();
+    if (!mapping || !message.trim()) return;
+    const text = message.trim();
+    const tuned = tuneMetricsFromText(mapping, text);
+    setMessages((current) => [
+      ...current,
+      { role: "user", text },
+      { role: "assistant", text: tuned.matched.length ? `Pronto: ${tuned.action} ${tuned.matched.join(", ")}. Revise os pesos abaixo e confirme a análise quando estiver bom.` : "Não encontrei uma dimensão clara nesse pedido. Tente citar financeiro, atendimento, relacionamento, NPS, uso ou receita." },
+    ]);
+    if (tuned.matched.length) setMapping(tuned.mapping);
+    setMessage("");
   };
 
   const submit = async (event: FormEvent) => {
@@ -185,12 +315,14 @@ export function DataPage() {
     setError("");
     setSuccess("");
     try {
-      const result = await analyzeSpreadsheet(selectedFile, mapping);
+      const result = await analyzeSpreadsheet(selectedFile, withDefaultMetricSettings(mapping));
       if (account) saveChurnAnalysis(account.id, result);
-      updateSpreadsheet(selectedFile.name, result.source.entities, sourceName.trim(), mapping);
+      updateSpreadsheet(selectedFile.name, result.source.entities, sourceName.trim(), withDefaultMetricSettings(mapping));
       setSuccess(`${sourceName.trim()} foi cadastrada e todas as telas foram atualizadas.`);
       setSelectedFile(null);
       setInspection(null);
+      setEditingActive(false);
+      setStep(1);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível cadastrar a planilha.");
     } finally {
@@ -198,11 +330,126 @@ export function DataPage() {
     }
   };
 
-  return (
-    <div className="data-page">
-      <header className="page-heading"><div><span className="eyebrow"><FileXls size={16} weight="duotone" /> Fonte e leitura dos dados</span><h1>Configure como a plataforma deve interpretar sua base.</h1><p>{account?.profile === "technology" ? "Os clientes e dados operacionais vêm desta fonte; tracking e conexões demonstrativas apenas complementam a análise." : "Dashboard, Previsões, Clientes e Gestão usam exclusivamente os campos associados nesta importação."}</p></div></header>
+  const canConfigure = Boolean(mapping);
+  const currentSourceName = selectedFile?.name ?? account?.spreadsheet?.fileName ?? "Fonte carregada";
+  const steps = [
+    { number: 1 as const, label: "Enviar base" },
+    { number: 2 as const, label: "Definir análise" },
+    { number: 3 as const, label: "Revisar e executar" },
+  ];
+  const guidedWeights = mapping && <section className="guided-weights" aria-labelledby="guided-weights-title">
+    <header>
+      <div><span>Sugestão inicial da IA</span><h3 id="guided-weights-title">Qual é a importância de cada coluna?</h3><p>O peso é relativo, não uma porcentagem. A direção diz se o risco está no valor alto ou no baixo.</p></div>
+      <strong>{activeMetricCount(mapping)} sugerido(s)</strong>
+    </header>
+    <div className="guided-weight-list">{metricFields.map((metric) => {
+      const setting = mapping.metrics?.[metric.key] ?? { enabled: true, weight: metric.defaultWeight, riskType: "HIGH_IS_RISK" as const };
+      return <article className={!setting.enabled ? "guided-weight-row needs-direction" : "guided-weight-row"} key={metric.key}>
+        <div className="guided-weight-name"><strong>{metric.label}</strong><span>{metric.group.toLowerCase()} · {metric.key}</span>{!setting.enabled && <em>Não usada no cálculo</em>}</div>
+        <div className="guided-weight-controls">
+          <div className="weight-pills" role="radiogroup" aria-label={`Importância de ${metric.label}`}>
+            {weightOptions.map((option) => <button key={option.value} type="button" role="radio" aria-checked={setting.enabled && setting.weight === option.value} className={setting.enabled && setting.weight === option.value ? "is-selected" : ""} onClick={() => changeMetric(metric.key, { enabled: true, weight: option.value })}><span>{option.label}</span><small>{option.badge}</small></button>)}
+          </div>
+          <div className="direction-pills" role="radiogroup" aria-label={`Direção do risco de ${metric.label}`}>
+            {riskDirectionOptions.map((option) => <button key={option.value} type="button" role="radio" aria-checked={option.value === "DISABLED" ? !setting.enabled : setting.enabled && setting.riskType === option.value} className={(option.value === "DISABLED" ? !setting.enabled : setting.enabled && setting.riskType === option.value) ? "is-selected" : ""} onClick={() => option.value === "DISABLED" ? changeMetric(metric.key, { enabled: false }) : changeMetric(metric.key, { enabled: true, riskType: option.value })}>{option.label}</button>)}
+          </div>
+        </div>
+      </article>;
+    })}</div>
+    <button type="button" className="link-button guided-weights-edit" onClick={() => setMode("manual")}><SlidersHorizontal size={14}/> Ver todas as colunas e configurações</button>
+  </section>;
 
-      <section className="data-source-layout">
+  const detailedConfig = mapping && <section className="panel config-editor churn-config-editor">
+    <div className="panel-heading"><div><span><SlidersHorizontal size={13}/> Configuração detalhada</span><h2>Objetivo e colunas usadas na análise</h2><p>{activeMetricCount(mapping)} de {metricFields.length} métricas em uso</p></div></div>
+    <div className="objective-editor">
+      <label>Comportamento a antecipar<input value="encerrar o relacionamento" readOnly /></label>
+      <label>Horizonte (dias)<input value={90} readOnly /></label>
+      <label>Como chamar cada registro<input value="cliente" readOnly /></label>
+      <label>Método<select value="AUTO" disabled><option value="AUTO">Automático e rigoroso</option></select></label>
+    </div>
+    <div className="metrics-toolbar">
+      <div className="metrics-scope" role="group" aria-label="Filtrar colunas"><button type="button" className="active">Em uso</button><button type="button">Ignoradas</button><button type="button">Todas</button></div>
+      <label className="search-control"><MagnifyingGlass size={16}/><span className="sr-only">Buscar coluna</span><input placeholder="Buscar coluna" readOnly /></label>
+      <div className="importance-mode"><span>Importância:</span><button type="button" className="is-active">Qualitativa</button><button type="button">Peso</button></div>
+      <label className="advanced-toggle"><input type="checkbox" disabled /><span>Opções avançadas</span></label>
+    </div>
+    {datasets.map((dataset) => {
+      const selectedSheet = inspection?.sheets.find((sheet) => sheet.name === mapping.sheets[dataset]);
+      const used = requiredFields[dataset].filter((field) => field.key in metricByKey ? mapping.metrics?.[field.key]?.enabled !== false : Boolean(mapping.columns[dataset]?.[field.key]));
+      return <details key={dataset} className="metric-group" open>
+        <summary><span aria-hidden="true">⌄</span><strong>{mapping.sheets[dataset] || dataset}</strong><small>{used.length} em uso de {requiredFields[dataset].length}</small><span className="metric-group__actions"><button type="button">Usar todas</button><button type="button">Nenhuma</button></span></summary>
+        <div className="table-scroll"><table className="config-table"><thead><tr><th>Usar</th><th>Coluna</th><th>Significado</th><th>Papel</th><th>Importância</th></tr></thead><tbody>
+          {requiredFields[dataset].map((field) => {
+            const metric = metricByKey[field.key];
+            const setting = metric ? mapping.metrics?.[field.key] ?? { enabled: true, weight: 1 } : null;
+            return <tr key={field.key} className={setting?.enabled === false ? "metric-row--off" : undefined}>
+              <td><input type="checkbox" checked={metric ? setting?.enabled !== false : Boolean(mapping.columns[dataset]?.[field.key])} onChange={(event) => metric ? changeMetric(field.key, { enabled: event.target.checked }) : undefined} disabled={!metric} /></td>
+              <td><strong>{field.key}</strong></td>
+              <td><input value={field.label} readOnly /></td>
+              <td><select value={roleLabelFor(field.key)} disabled><option>{roleLabelFor(field.key)}</option></select></td>
+              <td>{metric ? <select value={setting?.weight ?? 1} onChange={(event) => changeMetric(field.key, { weight: Number(event.target.value), enabled: true })}>{weightOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : <span className="metric-confidence">Obrigatório</span>}</td>
+            </tr>;
+          })}
+        </tbody></table></div>
+        {inspection && selectedSheet && <label className="data-field config-sheet-select">Origem dos dados<select value={mapping.sheets[dataset]} onChange={(event) => changeSheet(dataset, event.target.value)}>{inspection.sheets.map((sheet) => <option key={sheet.name} value={sheet.name}>{inspection.format === "csv" ? "Arquivo CSV" : `Aba ${sheet.name}`} · {sheet.rows} linhas</option>)}</select></label>}
+      </details>;
+    })}
+  </section>;
+
+  return (
+    <div className="data-page adaptive-data-page">
+      <header className="page-heading"><div><span className="eyebrow"><FileXls size={16} weight="duotone" /> Análise da sua base</span><h1>Configure a fonte que alimenta todas as abas.</h1><p>Dashboard, Previsões, Clientes e Gestão usam a execução salva aqui.</p></div></header>
+
+      <nav className="analysis-stepper" aria-label="Etapas da análise">
+        <ol>{steps.map((item) => {
+          const available = item.number === 1 || (item.number === 2 && canConfigure) || (item.number === 3 && canConfigure);
+          const completed = item.number < step;
+          return <li key={item.number} className={completed ? "is-complete" : item.number === step ? "is-current" : ""}>
+            <button type="button" disabled={!available} aria-current={item.number === step ? "step" : undefined} onClick={() => available && setStep(item.number)}>
+              <span aria-hidden="true">{completed ? <CheckCircle size={18} weight="fill"/> : item.number}</span>
+              <strong>{item.label}</strong>
+            </button>
+          </li>;
+        })}</ol>
+      </nav>
+
+      {canConfigure && <article className="workflow-summary">
+        <CheckCircle size={18} weight="fill"/>
+        <span><strong>{currentSourceName}</strong><small>{inspection ? `${inspection.sheets.length} aba(s), ${inspection.sheets.reduce((sum, sheet) => sum + sheet.rows, 0)} linhas` : "Configuração ativa carregada"} · {activeMetricCount(mapping)} métricas ativas</small></span>
+        <button type="button" onClick={() => setStep(1)}>Trocar base</button>
+      </article>}
+
+      {step === 1 && <section className="adaptive-source-grid">
+        <article className="panel adaptive-upload-panel">
+          <div className="panel-heading"><div><span><UploadSimple size={13}/> Enviar base</span><h2>Importar Excel ou CSV</h2><p>Use a mesma estrutura da demo para manter MRR, probabilidade, gestão e clientes conectados.</p></div></div>
+          <label className={`data-file-drop${selectedFile ? " data-file-drop--selected" : ""}`}><FileXls size={28} /><span><strong>{selectedFile?.name ?? "Escolher arquivo .xlsx ou .csv"}</strong><small>{processing === "inspect" ? "Lendo abas e colunas..." : selectedFile ? `${(selectedFile.size / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} KB · estrutura lida pelo servidor local` : "Arraste aqui ou clique para selecionar"}</small></span><input className="sr-only" type="file" accept=".xlsx,.csv" onChange={(event) => void selectFile(event.target.files?.[0] ?? null)} /></label>
+          {account?.spreadsheet && analysis && <div className="active-run-card"><CheckCircle size={18} weight="fill"/><span><strong>Execução ativa</strong><small>{account.spreadsheet.fileName} · {analysis.summary.analyzedEntities} clientes analisados</small></span><button type="button" onClick={editActiveConfig}><SlidersHorizontal size={14}/> Editar pesos</button><Link to="/">Abrir análise</Link></div>}
+        </article>
+        <aside className="panel data-contract-panel">
+          <div className="panel-heading"><div><span>Contrato da base</span><h2>O que precisa existir</h2><p>A validação acontece antes de substituir a fonte atual.</p></div></div>
+          <div className="data-contract-list"><div><strong>Clientes e contratos</strong><span>Identificador, segmento, plano, receita, SLA e início do contrato.</span></div><div><strong>Histórico mensal</strong><span>Uso, chamados, SLA, reuniões e atraso ao longo do tempo.</span></div><div><strong>Satisfação</strong><span>Resposta, nota e classificação do NPS.</span></div><div><strong>Desfecho</strong><span>Situação atual e mês de cancelamento para ensinar o modelo.</span></div></div>
+          <p className="data-contract-note">Os nomes das abas e colunas podem ser diferentes. A configuração de leitura conecta sua estrutura ao modelo.</p>
+        </aside>
+      </section>}
+
+      {step === 2 && canConfigure && <section className="analysis-step-panel">
+        <div className="step-heading"><div><span>Definir análise</span><h2>O que deve orientar o risco?</h2><p>Use o assistente ou edite manualmente as colunas, métricas e pesos.</p></div></div>
+        <div className="mode-switch" role="tablist" aria-label="Modo de configuração"><button role="tab" aria-selected={mode === "guided"} className={mode === "guided" ? "is-active" : ""} type="button" onClick={() => setMode("guided")}><ChatCircleDots size={17}/> Assistente guiado</button><button role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "is-active" : ""} type="button" onClick={() => setMode("manual")}><SlidersHorizontal size={17}/> Editar configuração</button></div>
+        {mode === "guided" ? <section className="analysis-chat-layout analysis-chat-layout--single"><article className="panel analysis-chat"><div className="chat-history">{messages.map((item, index) => <div key={`${item.role}-${index}`} className={`chat-message chat-message--${item.role}`}><span>{item.role === "assistant" ? <Sparkle size={15}/> : "Você"}</span><p>{item.text}</p></div>)}</div>{guidedWeights}<form className="chat-composer" onSubmit={ask}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Explique o objetivo ou uma prioridade que não aparece acima"/><button className="primary-button" aria-label="Enviar" disabled={!message.trim()}><PaperPlaneTilt size={18}/></button></form><div className="consent-row"><span><ShieldCheck size={14}/> Este assistente ajusta apenas a configuração local de métricas e pesos.</span></div></article></section> : detailedConfig}
+        <div className="step-actions"><button type="button" className="secondary-button" onClick={() => setStep(1)}>Voltar</button><button type="button" className="primary-button" onClick={() => setStep(3)}>Revisar e continuar <ArrowRight size={17}/></button></div>
+      </section>}
+
+      {step === 3 && canConfigure && <form className="panel analysis-review" onSubmit={submit}>
+        <div className="panel-heading"><div><span><ShieldCheck size={13}/> Revisar e executar</span><h2>Confirme antes de iniciar</h2><p>{selectedFile ? "A execução recalcula todas as abas com a planilha e pesos atuais." : editingActive ? "A configuração ativa será salva; reenvie a planilha para recalcular os resultados." : "A configuração será salva; reenvie a planilha para recalcular os resultados."}</p></div></div>
+        <dl className="review-grid"><div><dt>Fonte</dt><dd>{currentSourceName}</dd></div><div><dt>Objetivo</dt><dd>Churn em 90 dias</dd></div><div><dt>Campos associados</dt><dd>{progress?.mapped ?? 0} de {progress?.total ?? 0}</dd></div><div><dt>Métricas ativas</dt><dd>{activeMetricCount(mapping)} de {metricFields.length}</dd></div></dl>
+        <label className="data-field">Nome da fonte<input value={sourceName} onChange={(event) => setSourceName(event.target.value)} placeholder="Ex.: Carteira comercial mensal" /></label>
+        <div className="step-actions"><button type="button" className="secondary-button" onClick={() => setStep(2)}>Voltar</button>{selectedFile ? <button className="primary-button" type="submit" disabled={Boolean(processing) || !progress?.complete}>{processing === "analyze" ? "Validando e calculando..." : "Confirmar leitura e analisar"} <ArrowRight size={17}/></button> : <button className="primary-button" type="button" onClick={saveActiveConfig}>Salvar configuração <CheckCircle size={17}/></button>}</div>
+      </form>}
+
+      {error && <p className="form-error data-feedback" role="alert">{error}</p>}
+      {success && <p className="form-success data-feedback" role="status"><CheckCircle size={17} weight="fill" />{success}</p>}
+
+      <section className="data-source-layout data-source-layout--legacy-hidden">
         <form className="data-registration-panel" onSubmit={submit}>
           <div className="panel-heading"><div><span>Nova fonte</span><h2>Cadastrar planilha ou CSV</h2><p>Primeiro lemos a estrutura; depois você confirma o significado de cada coluna.</p></div><UploadSimple size={25} /></div>
           <label className="data-field">Nome da fonte<input value={sourceName} onChange={(event) => setSourceName(event.target.value)} placeholder="Ex.: Carteira comercial mensal" /></label>
@@ -219,6 +466,21 @@ export function DataPage() {
                 <div className="mapping-fields">{requiredFields[dataset].map((field) => <label key={field.key}><span>{field.label}<small>{field.key}</small></span><select value={mapping.columns[dataset]?.[field.key] ?? ""} onChange={(event) => changeColumn(dataset, field.key, event.target.value)}><option value="">Selecionar coluna</option>{selectedSheet?.columns.map((column) => <option key={column} value={column}>{column}</option>)}</select></label>)}</div>
               </details>;
             })}</div>
+            <section className="metric-config" aria-labelledby="metric-config-title">
+              <div className="mapping-config__heading"><div><span className="eyebrow"><SlidersHorizontal size={15} /> Pesos e métricas</span><h3 id="metric-config-title">Escolha o que influencia a priorização</h3><p>As métricas desativadas saem do treino. O peso ajusta a importância de negócio na probabilidade final exibida nas abas.</p></div><strong>{metricFields.filter((metric) => mapping.metrics?.[metric.key]?.enabled !== false).length}/{metricFields.length}<small> métricas ativas</small></strong></div>
+              <div className="metric-weight-list">{metricFields.map((metric) => {
+                const setting = mapping.metrics?.[metric.key] ?? { enabled: true, weight: metric.defaultWeight };
+                return <label className="metric-weight-row" key={metric.key}>
+                  <span><input type="checkbox" checked={setting.enabled} onChange={(event) => changeMetric(metric.key, { enabled: event.target.checked })}/><strong>{metric.label}</strong><small>{metric.group}</small></span>
+                  <select value={setting.weight} disabled={!setting.enabled} onChange={(event) => changeMetric(metric.key, { weight: Number(event.target.value) })} aria-label={`Peso de ${metric.label}`}>
+                    <option value={0.5}>Baixo</option>
+                    <option value={1}>Normal</option>
+                    <option value={1.5}>Alto</option>
+                    <option value={2}>Crítico</option>
+                  </select>
+                </label>;
+              })}</div>
+            </section>
           </section>}
 
           <button className="primary-button" type="submit" disabled={Boolean(processing) || !progress?.complete}>{processing === "analyze" ? "Validando e calculando..." : "Confirmar leitura e analisar"} <ArrowRight size={17} /></button>

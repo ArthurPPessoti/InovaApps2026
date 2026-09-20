@@ -5814,6 +5814,8 @@ body:has(dialog[open]) {
   margin-bottom: 20px;
 }
 
+.data-source-layout--legacy-hidden { display: none; }
+
 .data-registration-panel,
 .data-contract-panel {
   padding: 24px;
@@ -5963,6 +5965,45 @@ body:has(dialog[open]) {
 .mapping-fields label > span { color: var(--gray-300); font-size: 9px; line-height: 1.3; }
 .mapping-fields label small { display: block; margin-top: 2px; color: var(--gray-600); font-size: 8px; }
 .mapping-fields select { width: 100%; min-width: 0; }
+
+.metric-config {
+  display: grid;
+  margin-top: 16px;
+  padding-top: 16px;
+  gap: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.metric-weight-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.metric-weight-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(4, 24, 51, .58);
+}
+
+.metric-weight-row > span {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.metric-weight-row input { accent-color: var(--cyan-400); }
+.metric-weight-row strong { overflow-wrap: anywhere; color: #fff; font-size: 10px; }
+.metric-weight-row small { grid-column: 2; color: var(--gray-500); font-size: 8px; }
+.metric-weight-row select { width: 100%; min-width: 0; }
+.metric-weight-row:has(input:not(:checked)) { opacity: .62; }
 
 .signal-source-banner {
   display: grid;
@@ -6122,8 +6163,10 @@ body:has(dialog[open]) {
   .data-registration-panel > * { grid-column: 1; }
   .risk-factor-columns,
   .evidence-highlight-grid,
-  .mapping-fields { grid-template-columns: 1fr; }
-  .mapping-fields label { grid-template-columns: 1fr; }
+  .mapping-fields,
+  .metric-weight-list { grid-template-columns: 1fr; }
+  .mapping-fields label,
+  .metric-weight-row { grid-template-columns: 1fr; }
   .signal-source-banner { grid-template-columns: auto 1fr; }
   .prediction-source-empty { align-items: flex-start; flex-wrap: wrap; }
   .prediction-source-empty .primary-button { margin-left: 0; }
@@ -6428,6 +6471,7 @@ body:has(dialog[open]) {
 .method-card .secondary-button { width: fit-content; }
 .adaptive-source-grid,
 .analysis-chat-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 18px; }
+.analysis-chat-layout--single { grid-template-columns: 1fr; }
 .adaptive-upload-panel,
 .profile-summary,
 .analysis-chat,
@@ -7369,6 +7413,7 @@ body:has(dialog[open]) {
 .guided-weight-name { display: grid; gap: 3px; min-width: 0; }
 .guided-weight-name strong { overflow: hidden; color: #ffffff; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .guided-weight-name span { overflow: hidden; color: #77849a; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.guided-weight-controls { display: grid; gap: 8px; min-width: 0; }
 
 .weight-pills {
   display: grid;
@@ -7411,6 +7456,9 @@ body:has(dialog[open]) {
 .weight-pills button.is-selected { border-color: var(--cyan-400); color: #ffffff; background: rgba(1, 86, 252, 0.35); }
 .weight-pills button.is-selected small { color: #001329; background: var(--cyan-400); }
 .guided-weights-edit { width: fit-content; }
+.churn-config-editor { margin-top: 0; }
+.config-sheet-select { margin: 12px 16px 16px; }
+.config-table td .metric-confidence { color: var(--gray-500); font-size: 10px; }
 
 @media (max-width: 900px) {
   .guided-weight-row { grid-template-columns: 1fr; gap: 9px; }

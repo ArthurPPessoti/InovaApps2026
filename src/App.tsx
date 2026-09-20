@@ -10,11 +10,10 @@ import { PredictionsPage } from "./pages/PredictionsPage";
 import { ProductAnalyticsPage } from "./pages/ProductAnalyticsPage";
 import { ProductTemporalAnalyticsPage } from "./pages/ProductTemporalAnalyticsPage";
 import { SignalsPage } from "./pages/SignalsPage";
-import { GeneralClientDetailPage, GeneralDashboardPage } from "./pages/GeneralExperience";
+import { DataPage, GeneralClientDetailPage, GeneralDashboardPage } from "./pages/GeneralExperience";
 import { GlobalSysCancelledClientPage, GlobalSysClientsPage } from "./pages/GlobalSysClientsPage";
 import { GlobalSysManagementPage } from "./pages/GlobalSysManagementPage";
 import { SurveyPage } from "./pages/RetentionPages";
-import { AdaptiveDataPage } from "./analysis/AdaptiveDataPage";
 import { usePortfolio } from "./features/portfolio/PortfolioContext";
 
 function ClientDetailRoute() {
@@ -57,7 +56,7 @@ function ProtectedApp() {
         <Route path="/sinais" element={isTechnology ? <SignalsPage /> : <Navigate to="/" replace />} />
         <Route path="/conexoes" element={isTechnology ? <ConnectionsPage /> : <Navigate to="/dados" replace />} />
         <Route path="/product-analytics" element={isTechnology ? <ProductAnalyticsPage /> : <Navigate to="/dados" replace />} />
-        <Route path="/dados" element={<AdaptiveDataPage />} />
+        <Route path="/dados" element={<DataPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

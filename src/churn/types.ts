@@ -11,6 +11,7 @@ export interface SpreadsheetInspection {
 export interface SpreadsheetMapping {
   sheets: Record<CanonicalDataset, string>;
   columns: Record<CanonicalDataset, Record<string, string>>;
+  metrics?: Record<string, { enabled: boolean; weight: number; riskType?: "HIGH_IS_RISK" | "LOW_IS_RISK" }>;
 }
 
 export interface ChurnFactor {

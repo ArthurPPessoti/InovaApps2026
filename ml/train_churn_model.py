@@ -89,6 +89,14 @@ TREND_COLUMNS = [
 
 CATEGORICAL_COLUMNS = ["segmento", "porte", "plano", "latest_nps_classification"]
 
+LOW_IS_RISK = {
+    "pct_sla_cumprido",
+    "uso_plataforma_pct",
+    "meeting_completion",
+    "latest_nps",
+    "latest_nps_answered",
+}
+
 FEATURE_LABELS = {
     "valor_mensal": "Receita mensal",
     "sla_contratado_h": "SLA contratado",
@@ -199,10 +207,49 @@ def _months_between(later: pd.Period, earlier: pd.Period) -> int:
     return (later.year - earlier.year) * 12 + later.month - earlier.month
 
 
+def _metric_key(feature: str) -> str:
+    for suffix in ("_mean_3m", "_delta_3m"):
+        if feature.endswith(suffix):
+            return feature.removesuffix(suffix)
+    return feature
+
+
+def _metric_settings(mapping: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    settings = (mapping or {}).get("metrics", {})
+    return settings if isinstance(settings, dict) else {}
+
+
+def _metric_enabled(settings: dict[str, dict[str, Any]], feature: str) -> bool:
+    configured = settings.get(_metric_key(feature), {})
+    return bool(configured.get("enabled", True))
+
+
+def _metric_weight(settings: dict[str, dict[str, Any]], feature: str) -> float:
+    configured = settings.get(_metric_key(feature), {})
+    try:
+        value = float(configured.get("weight", 1))
+    except (TypeError, ValueError):
+        value = 1
+    return min(max(value, 0.5), 2.0)
+
+
+def _metric_risk_type(settings: dict[str, dict[str, Any]], feature: str) -> str:
+    configured = settings.get(_metric_key(feature), {})
+    risk_type = str(configured.get("riskType", "")).upper()
+    if risk_type in ("HIGH_IS_RISK", "LOW_IS_RISK"):
+        return risk_type
+    return "LOW_IS_RISK" if _metric_key(feature) in LOW_IS_RISK else "HIGH_IS_RISK"
+
+
+def _configured_features(features: list[str], settings: dict[str, dict[str, Any]]) -> list[str]:
+    return [feature for feature in features if _metric_enabled(settings, feature)]
+
+
 def prepare_data(path: Path, horizon_months: int = 3, mapping: dict[str, Any] | None = None) -> PreparedData:
     compatibility = validate_workbook(path, mapping)
     if not compatibility["compatible"]:
         raise ValueError(json.dumps(compatibility, ensure_ascii=False))
+    settings = _metric_settings(mapping)
 
     tables = read_source_tables(path, mapping)
     clients = tables["clientes"].drop_duplicates("cliente_id", keep="last")
@@ -286,6 +333,10 @@ def prepare_data(path: Path, horizon_months: int = 3, mapping: dict[str, Any] | 
         for suffix in ("mean_3m", "delta_3m")
     ]
     categorical_features = CATEGORICAL_COLUMNS.copy()
+    numeric_features = _configured_features(numeric_features, settings)
+    categorical_features = _configured_features(categorical_features, settings)
+    if not numeric_features and not categorical_features:
+        raise ValueError("Ative pelo menos uma métrica antes de calcular o churn.")
 
     training_cutoff = observed_until - horizon_months
     supervised = snapshots[
@@ -487,8 +538,47 @@ def local_factors(model: Pipeline, frame: pd.DataFrame, limit: int = 6) -> list[
     return results
 
 
+def apply_business_weights(
+    probabilities: np.ndarray,
+    frame: pd.DataFrame,
+    numeric_features: list[str],
+    settings: dict[str, dict[str, Any]],
+) -> np.ndarray:
+    if not settings or all(_metric_weight(settings, feature) == 1 for feature in numeric_features):
+        return probabilities
+    columns = [feature for feature in numeric_features if feature in frame.columns]
+    if not columns:
+        return probabilities
+
+    weighted_parts = []
+    neutral_parts = []
+    total_weight = 0.0
+    for feature in columns:
+        values = pd.to_numeric(frame[feature], errors="coerce")
+        low, high = values.quantile(0.05), values.quantile(0.95)
+        if pd.isna(low) or pd.isna(high) or low == high:
+            risk = pd.Series(0.5, index=frame.index)
+        else:
+            risk = ((values - low) / (high - low)).clip(0, 1)
+            if _metric_risk_type(settings, feature) == "LOW_IS_RISK":
+                risk = 1 - risk
+            risk = risk.fillna(0.5)
+        weight = _metric_weight(settings, feature)
+        weighted_parts.append(risk.to_numpy() * weight)
+        neutral_parts.append(risk.to_numpy())
+        total_weight += weight
+
+    if not weighted_parts or not total_weight:
+        return probabilities
+    weighted_signal = np.sum(weighted_parts, axis=0) / total_weight
+    neutral_signal = np.mean(neutral_parts, axis=0)
+    adjustment = 1 + (weighted_signal - neutral_signal) * 0.45
+    return np.clip(probabilities * adjustment, 0.001, 0.95)
+
+
 def train(path: Path, mapping: dict[str, Any] | None = None) -> dict[str, Any]:
     prepared = prepare_data(path, mapping=mapping)
+    settings = _metric_settings(mapping)
     features = prepared.numeric_features + prepared.categorical_features
     supervised = prepared.supervised
     train_frame = supervised[supervised["month"].le(pd.Period("2025-09", freq="M"))]
@@ -512,6 +602,7 @@ def train(path: Path, mapping: dict[str, Any] | None = None) -> dict[str, Any]:
     final_model = make_pipeline(prepared.numeric_features, prepared.categorical_features, selected_c)
     final_model.fit(supervised[features], supervised["churn_90d"])
     probabilities = final_model.predict_proba(prepared.current[features])[:, 1]
+    probabilities = apply_business_weights(probabilities, prepared.current, prepared.numeric_features, settings)
     factors = local_factors(final_model, prepared.current[features])
 
     predictions = []
@@ -608,6 +699,10 @@ def train(path: Path, mapping: dict[str, Any] | None = None) -> dict[str, Any]:
             "trainingSnapshots": int(len(supervised)),
             "test": test_metrics,
             "globalFactors": global_factors,
+            "configuredMetrics": {
+                key: {"enabled": bool(value.get("enabled", True)), "weight": _metric_weight(settings, key), "riskType": _metric_risk_type(settings, key)}
+                for key, value in settings.items()
+            },
         },
         "predictionRun": {
             "asOfDate": f"{prepared.observed_until}-30",

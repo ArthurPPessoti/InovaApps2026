@@ -45,6 +45,41 @@ export const requiredFields: Record<CanonicalDataset, Array<{ key: string; label
   ],
 };
 
+export const metricFields: Array<{ key: string; label: string; group: string; defaultWeight: number }> = [
+  { key: "uso_plataforma_pct", label: "% de uso", group: "Uso", defaultWeight: 1 },
+  { key: "pct_sla_cumprido", label: "% de SLA cumprido", group: "Atendimento", defaultWeight: 1 },
+  { key: "chamados_abertos", label: "Chamados abertos", group: "Atendimento", defaultWeight: 1 },
+  { key: "chamados_criticos", label: "Chamados críticos", group: "Atendimento", defaultWeight: 1 },
+  { key: "chamados_reabertos", label: "Chamados reabertos", group: "Atendimento", defaultWeight: 1 },
+  { key: "tempo_medio_resolucao_h", label: "Tempo médio de resolução", group: "Atendimento", defaultWeight: 1 },
+  { key: "reclamacoes_formais", label: "Reclamações formais", group: "Relacionamento", defaultWeight: 1 },
+  { key: "latest_nps", label: "Último NPS", group: "Relacionamento", defaultWeight: 1 },
+  { key: "months_since_nps", label: "Meses desde o NPS", group: "Relacionamento", defaultWeight: 0.8 },
+  { key: "dias_atraso_pagamento", label: "Dias de atraso", group: "Financeiro", defaultWeight: 1 },
+  { key: "meeting_completion", label: "Reuniões realizadas", group: "Relacionamento", defaultWeight: 1 },
+  { key: "valor_mensal", label: "Receita mensal", group: "Contrato", defaultWeight: 1 },
+  { key: "sla_contratado_h", label: "SLA contratado", group: "Contrato", defaultWeight: 1 },
+  { key: "tenure_months", label: "Tempo de contrato", group: "Contrato", defaultWeight: 1 },
+  { key: "segmento", label: "Segmento", group: "Perfil", defaultWeight: 1 },
+  { key: "porte", label: "Porte", group: "Perfil", defaultWeight: 1 },
+  { key: "plano", label: "Plano", group: "Perfil", defaultWeight: 1 },
+  { key: "latest_nps_classification", label: "Classificação do NPS", group: "Relacionamento", defaultWeight: 1 },
+];
+
+const lowIsRisk = new Set(["pct_sla_cumprido", "uso_plataforma_pct", "meeting_completion", "latest_nps"]);
+
+export function withDefaultMetricSettings(mapping: SpreadsheetMapping): SpreadsheetMapping {
+  const metrics = Object.fromEntries(metricFields.map((metric) => {
+    const current = mapping.metrics?.[metric.key];
+    return [metric.key, {
+      enabled: current?.enabled ?? true,
+      weight: current?.weight ?? metric.defaultWeight,
+      riskType: current?.riskType ?? (lowIsRisk.has(metric.key) ? "LOW_IS_RISK" : "HIGH_IS_RISK"),
+    }];
+  }));
+  return { ...mapping, metrics };
+}
+
 const datasets = Object.keys(requiredFields) as CanonicalDataset[];
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "").toLowerCase();
 
@@ -66,7 +101,7 @@ export function suggestSpreadsheetMapping(inspection: SpreadsheetInspection): Sp
       return [field.key, source?.columns.find((column) => names.includes(normalize(column))) ?? ""];
     }));
   }
-  return { sheets, columns };
+  return withDefaultMetricSettings({ sheets, columns });
 }
 
 export function mappingProgress(mapping: SpreadsheetMapping) {
