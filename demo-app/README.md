@@ -3,7 +3,20 @@
 Esta aplicação simula um sistema externo instrumentado pelo tracker server-side.
 O navegador nunca recebe a credencial da integração.
 
-## Configuração
+## Configuração automática recomendada
+
+Na raiz do projeto, execute:
+
+```powershell
+npm run setup:telemetry-demo
+```
+
+O comando cria ou reutiliza seis clientes demonstrativos, cadastra as
+funcionalidades, gera o histórico temporal e configura automaticamente o
+arquivo local `demo-app/.env` para o projeto externo do `C067`. Ele pode ser
+executado novamente sem duplicar conexões ou eventos.
+
+## Configuração manual alternativa
 
 1. Na plataforma, cadastre uma aplicação chamada `Sistema de Estoque`.
 2. Na aba Integração, copie o Application ID, a credencial e o endpoint.

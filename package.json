@@ -11,6 +11,7 @@
     "test:tracker": "node --test tracker/createTracker.test.mjs",
     "test:tracker:real": "node scripts/test-tracker.mjs",
     "seed:telemetry-demo": "node server/telemetry-demo-seed.mjs",
+    "setup:telemetry-demo": "node server/telemetry-demo-setup.mjs",
     "demo:start": "node --env-file=demo-app/.env demo-app/server.mjs",
     "test:demo": "node --test demo-app/actions.test.mjs",
     "model:train": "python ml/train_churn_model.py --input \"Informacoes_fornecidas/INOVAAPPS_base_de_dados.xlsx\" --output \"public/data/churn-model.json\"",

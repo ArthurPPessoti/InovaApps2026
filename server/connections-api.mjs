@@ -118,7 +118,7 @@ function credentialsMatch(receivedCredential, storedHash) {
   return receivedHash.length === expectedHash.length && timingSafeEqual(receivedHash, expectedHash);
 }
 
-function loadEncryptionKey() {
+export function loadEncryptionKey() {
   mkdirSync(DATA_DIRECTORY, { recursive: true });
   if (!existsSync(ENCRYPTION_KEY_PATH)) {
     writeFileSync(ENCRYPTION_KEY_PATH, randomBytes(32), { flag: "wx", mode: 0o600 });
@@ -149,7 +149,7 @@ function decryptCredential(row, key) {
   ]).toString("utf8");
 }
 
-function openDatabase() {
+export function openDatabase() {
   mkdirSync(DATA_DIRECTORY, { recursive: true });
   const database = new DatabaseSync(DATABASE_PATH);
   database.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;");
@@ -321,7 +321,7 @@ function mapApplication(row) {
   };
 }
 
-function getApplication(database, applicationId, encryptionKey, includeCredential = true) {
+export function getApplication(database, applicationId, encryptionKey, includeCredential = true) {
   const row = database.prepare(`
     SELECT
       a.*,
@@ -351,7 +351,7 @@ function getApplication(database, applicationId, encryptionKey, includeCredentia
   };
 }
 
-function insertApplication(database, encryptionKey, input, preservedId) {
+export function insertApplication(database, encryptionKey, input, preservedId) {
   const now = new Date().toISOString();
   const credential = createCredential();
   const encryptedCredential = encryptCredential(credential, encryptionKey);
