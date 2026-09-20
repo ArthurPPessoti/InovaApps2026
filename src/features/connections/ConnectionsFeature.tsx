@@ -1,5 +1,7 @@
 import {
   ArrowLeft,
+  ArrowRight,
+  ArrowSquareOut,
   BracketsCurly,
   CheckCircle,
   ClipboardText,
@@ -13,6 +15,9 @@ import {
 } from "@phosphor-icons/react";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
+import { useChurnAnalysis } from "../../churn/churnAnalysis";
+import { selectGlobalSysAnalysis } from "../../churn/globalSysPortfolio";
 import {
   normalizePortfolioName,
   type PortfolioCompanyRecord,
@@ -21,13 +26,17 @@ import {
 import {
   addFeature,
   createApplication,
+  discardLegacyApplications,
   getApplication,
   linkApplicationClient,
   listApplications,
   listEvents,
-  migrateLegacyApplications,
 } from "./connectionApi";
-import { buildConnectionClientOptions, type ConnectionClientOption } from "./clientOptions";
+import {
+  buildConnectionClientOptions,
+  buildGlobalSysConnectionOptions,
+  type ConnectionClientOption,
+} from "./clientOptions";
 import {
   buildTrackerTestCommand,
   TRACKER_CREDENTIAL_PLACEHOLDER,
@@ -43,16 +52,40 @@ import "./connections.css";
 
 type DetailTab = "configuration" | "events" | "integration";
 const NEW_PRODUCT_OPTION = "__new_product__";
+const EXTERNAL_DEMO_CLIENT_ID = "C067";
+const EXTERNAL_DEMO_URL = "http://127.0.0.1:4174/";
 
 export function ConnectionsFeature() {
+  const { account } = useAuth();
+  const {
+    analysis,
+    loading: analysisLoading,
+    error: analysisError,
+  } = useChurnAnalysis(account?.id);
   const {
     companies,
-    products,
+    persistedProducts,
     loading: portfolioLoading,
     error: portfolioError,
     refresh: refreshPortfolio,
   } = usePortfolio();
-  const connectionClientOptions = useMemo(() => buildConnectionClientOptions(products), [products]);
+  const globalSysAnalysis = useMemo(
+    () => analysis ? selectGlobalSysAnalysis(analysis) : null,
+    [analysis],
+  );
+  const connectionClientOptions = useMemo(
+    () => [
+      ...buildGlobalSysConnectionOptions(globalSysAnalysis?.predictions ?? []),
+      ...buildConnectionClientOptions(persistedProducts),
+    ],
+    [globalSysAnalysis, persistedProducts],
+  );
+  const persistedCompanies = useMemo(
+    () => companies.filter((company) => company.source === "persisted"),
+    [companies],
+  );
+  const productCatalogLoading = portfolioLoading || analysisLoading;
+  const productCatalogError = analysisError || portfolioError;
   const [applications, setApplications] = useState<ConnectedApplication[]>([]);
   const availableConnectionClientOptions = useMemo(() => {
     const connectedProductIds = new Set(
@@ -79,11 +112,7 @@ export function ConnectionsFeature() {
 
   useEffect(() => {
     const initialize = async () => {
-      try {
-        await migrateLegacyApplications();
-      } catch (error) {
-        setPageError(error instanceof Error ? error.message : "Não foi possível migrar os dados locais.");
-      }
+      discardLegacyApplications();
       await loadApplicationList();
     };
     void initialize();
@@ -146,9 +175,9 @@ export function ConnectionsFeature() {
       <NewApplicationForm
         clients={availableConnectionClientOptions}
         catalogClients={connectionClientOptions}
-        companies={companies}
-        portfolioLoading={portfolioLoading}
-        portfolioError={portfolioError}
+        companies={persistedCompanies}
+        portfolioLoading={productCatalogLoading}
+        portfolioError={productCatalogError}
         onCancel={showList}
         onCreate={handleCreateApplication}
       />
@@ -170,7 +199,7 @@ export function ConnectionsFeature() {
         onLinkClient={(clientId) => handleLinkClient(applicationId, clientId)}
         onRefresh={() => refreshApplication(applicationId)}
         clients={availableConnectionClientOptions}
-        identity={resolveConnectionIdentity(selectedApplication, connectionClientOptions, portfolioLoading)}
+        identity={resolveConnectionIdentity(selectedApplication, connectionClientOptions, productCatalogLoading)}
         pageError={pageError}
       />
     );
@@ -212,8 +241,9 @@ export function ConnectionsFeature() {
         ) : (
           <div className="connect-app-grid">
             {applications.map((application) => {
-              const identity = resolveConnectionIdentity(application, connectionClientOptions, portfolioLoading);
-              return <article className="connect-app-card" key={application.id}>
+              const identity = resolveConnectionIdentity(application, connectionClientOptions, productCatalogLoading);
+              const isExternalDemo = application.clientId === EXTERNAL_DEMO_CLIENT_ID;
+              return <article className={`connect-app-card${isExternalDemo ? " connect-app-card--external-demo" : ""}`} key={application.id}>
                 <div className="connect-app-card-top">
                   <span className="connect-app-icon">
                     <LinkSimple size={24} weight="duotone" />
@@ -228,6 +258,15 @@ export function ConnectionsFeature() {
                   <span><IdentificationCard size={15} /> {application.id}</span>
                   <span><BracketsCurly size={15} /> {application.featureCount} funcionalidade(s)</span>
                 </div>
+                {isExternalDemo && (
+                  <aside className="connect-external-demo" aria-label="Projeto externo de exemplo">
+                    <strong>* Projeto externo de exemplo</strong>
+                    <span>{application.featureCount} funcionalidades conectadas enviando eventos para este produto.</span>
+                    <a href={EXTERNAL_DEMO_URL} target="_blank" rel="noreferrer">
+                      Abrir projeto externo <ArrowSquareOut size={14} weight="bold" />
+                    </a>
+                  </aside>
+                )}
                 <button className="secondary-button connect-button" type="button" onClick={() => showApplication(application.id)}>
                   Abrir
                 </button>
@@ -551,6 +590,7 @@ function ApplicationDetail({
             clients={clients}
             onAddFeature={onAddFeature}
             onLinkClient={onLinkClient}
+            onOpenIntegration={() => onTabChange("integration")}
           />
         )}
         {activeTab === "events" && <EventsTab application={application} onRefresh={onRefresh} />}
@@ -580,12 +620,14 @@ function ConfigurationTab({
   clients,
   onAddFeature,
   onLinkClient,
+  onOpenIntegration,
 }: {
   application: ConnectedApplication;
   identity: ConnectionIdentity;
   clients: ConnectionClientOption[];
   onAddFeature: (input: NewFeatureInput) => Promise<void>;
   onLinkClient: (clientId: string) => Promise<void>;
+  onOpenIntegration: () => void;
 }) {
   const [addingFeature, setAddingFeature] = useState(false);
   const [name, setName] = useState("");
@@ -682,6 +724,24 @@ function ConfigurationTab({
             </button>
           )}
         </div>
+
+        <aside className="connect-instrumentation-guide" aria-label="Como ativar o envio de eventos">
+          <div className="connect-instrumentation-guide__intro">
+            <span className="connect-instrumentation-guide__icon"><Code size={21} weight="duotone" /></span>
+            <div>
+              <strong>Cadastrar a funcionalidade não instala o rastreamento automaticamente.</strong>
+              <p>Aqui você define o evento esperado. Depois, um desenvolvedor precisa adicionar a chamada <code>POST /api/events</code> no backend do produto real.</p>
+            </div>
+            <button className="connect-instrumentation-guide__action" type="button" onClick={onOpenIntegration}>
+              Ver código e credenciais <ArrowRight size={15} />
+            </button>
+          </div>
+          <ol className="connect-instrumentation-steps">
+            <li><span>1</span><div><strong>Cadastre</strong><small>Defina o nome amigável e o identificador técnico do evento.</small></div></li>
+            <li><span>2</span><div><strong>Integre</strong><small>O desenvolvedor usa Application ID, credencial e endpoint no sistema real.</small></div></li>
+            <li><span>3</span><div><strong>Valide</strong><small>Execute a ação no produto e confirme o recebimento na aba Eventos.</small></div></li>
+          </ol>
+        </aside>
 
         {addingFeature && (
           <form className="connect-feature-form" onSubmit={submitFeature}>

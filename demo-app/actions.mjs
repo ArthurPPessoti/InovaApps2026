@@ -2,24 +2,24 @@ export const DEMO_USER_ID = "user_001";
 
 export function createInventoryActions({ tracker, userId = DEMO_USER_ID }) {
   return Object.freeze({
-    "cadastrar-produto": async () => {
-      const event = await tracker.track("produto_cadastrado", { userId });
+    "acessar-painel": async () => {
+      const event = await tracker.track("painel_acessado", { userId });
       return {
-        message: "Produto cadastrado com sucesso.",
+        message: "Painel acessado com sucesso.",
         event,
       };
     },
-    "consultar-estoque": async () => {
-      const event = await tracker.track("estoque_consultado", { userId });
+    "exportar-relatorio": async () => {
+      const event = await tracker.track("relatorio_exportado", { userId });
       return {
-        message: "Estoque consultado com sucesso.",
+        message: "Relatório exportado com sucesso.",
         event,
       };
     },
-    "gerar-relatorio": async () => {
-      const event = await tracker.track("relatorio_gerado", { userId });
+    "executar-automacao": async () => {
+      const event = await tracker.track("automacao_executada", { userId });
       return {
-        message: "Relatório gerado com sucesso.",
+        message: "Automação executada com sucesso.",
         event,
       };
     },

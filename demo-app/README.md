@@ -33,5 +33,7 @@ Em outro terminal, inicie a aplicação externa:
 npm run demo:start
 ```
 
-Abra `http://127.0.0.1:4174` e execute uma das funcionalidades. Depois volte
-à plataforma, abra a mesma aplicação em Conexões e consulte a aba Eventos.
+Abra `http://127.0.0.1:4174` e execute uma das funcionalidades. Cada cartão
+mostra a contagem retornada pela própria plataforma e é atualizado depois do
+evento ser aceito. Depois volte à plataforma, abra a mesma aplicação em
+Conexões e consulte a aba Eventos ou a análise temporal do produto vinculado.

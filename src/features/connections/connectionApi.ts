@@ -24,26 +24,7 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit): Promise
   return body as T;
 }
 
-export async function migrateLegacyApplications() {
-  const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!stored) return;
-
-  let applications: unknown;
-  try {
-    applications = JSON.parse(stored);
-  } catch {
-    return;
-  }
-
-  if (!Array.isArray(applications) || applications.length === 0) {
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
-    return;
-  }
-
-  await request("/api/connections/applications/import", {
-    method: "POST",
-    body: JSON.stringify({ applications }),
-  });
+export function discardLegacyApplications() {
   localStorage.removeItem(LEGACY_STORAGE_KEY);
 }
 

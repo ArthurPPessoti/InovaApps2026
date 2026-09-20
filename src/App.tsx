@@ -6,21 +6,35 @@ import { AccessPage } from "./pages/AccessPage";
 import { ClientDetailPage } from "./pages/ClientDetailPage";
 import { CompanyDetailPage } from "./pages/CompanyDetailPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
-import { ManagementPage } from "./pages/ManagementPage";
 import { PredictionsPage } from "./pages/PredictionsPage";
 import { ProductAnalyticsPage } from "./pages/ProductAnalyticsPage";
 import { ProductTemporalAnalyticsPage } from "./pages/ProductTemporalAnalyticsPage";
 import { SignalsPage } from "./pages/SignalsPage";
 import { GeneralClientDetailPage, GeneralDashboardPage } from "./pages/GeneralExperience";
-import { CancelledClientDetailPage, ClientsPage, SurveyPage } from "./pages/RetentionPages";
+import { GlobalSysCancelledClientPage, GlobalSysClientsPage } from "./pages/GlobalSysClientsPage";
+import { GlobalSysManagementPage } from "./pages/GlobalSysManagementPage";
+import { SurveyPage } from "./pages/RetentionPages";
 import { AdaptiveDataPage } from "./analysis/AdaptiveDataPage";
+import { usePortfolio } from "./features/portfolio/PortfolioContext";
 
 function ClientDetailRoute() {
   const { clienteId } = useParams();
   const { account } = useAuth();
   const { analysis, loading } = useChurnAnalysis(account?.id);
+  const { getProduct, loading: portfolioLoading } = usePortfolio();
+  const connectedProduct = clienteId ? getProduct(clienteId) : undefined;
   if (loading || analysis?.predictions.some((item) => item.subjectId === clienteId)) return <GeneralClientDetailPage />;
-  return <ClientDetailPage />;
+  if (portfolioLoading) return <GeneralClientDetailPage />;
+  return connectedProduct?.source === "persisted" ? <ClientDetailPage /> : <GeneralClientDetailPage />;
+}
+
+function CompanyDetailRoute() {
+  const { companyId } = useParams();
+  const { getCompany, loading } = usePortfolio();
+  if (loading) return <CompanyDetailPage />;
+  return companyId && getCompany(companyId)?.source === "persisted"
+    ? <CompanyDetailPage />
+    : <Navigate to="/clientes" replace />;
 }
 
 function ProtectedApp() {
@@ -33,13 +47,13 @@ function ProtectedApp() {
     <AppShell>
       <Routes>
         <Route path="/" element={<GeneralDashboardPage />} />
-        <Route path="/clientes" element={<ClientsPage />} />
-        <Route path="/clientes/cancelados/:clienteId" element={<CancelledClientDetailPage />} />
+        <Route path="/clientes" element={<GlobalSysClientsPage />} />
+        <Route path="/clientes/cancelados/:clienteId" element={<GlobalSysCancelledClientPage />} />
         <Route path="/clientes/:clienteId/analytics" element={isTechnology ? <ProductTemporalAnalyticsPage /> : <Navigate to="/dados" replace />} />
         <Route path="/clientes/:clienteId" element={<ClientDetailRoute />} />
-        <Route path="/empresas/:companyId" element={<CompanyDetailPage />} />
+        <Route path="/empresas/:companyId" element={<CompanyDetailRoute />} />
         <Route path="/previsoes" element={<PredictionsPage />} />
-        <Route path="/gestao" element={<ManagementPage />} />
+        <Route path="/gestao" element={<GlobalSysManagementPage />} />
         <Route path="/sinais" element={isTechnology ? <SignalsPage /> : <Navigate to="/" replace />} />
         <Route path="/conexoes" element={isTechnology ? <ConnectionsPage /> : <Navigate to="/dados" replace />} />
         <Route path="/product-analytics" element={isTechnology ? <ProductAnalyticsPage /> : <Navigate to="/dados" replace />} />

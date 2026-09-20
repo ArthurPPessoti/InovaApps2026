@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Aplicação externa de demonstração para eventos do Sistema de Estoque." />
-    <title>Sistema de Estoque | Demo</title>
+    <meta name="description" content="Aplicação externa de demonstração conectada à telemetria do produto C067." />
+    <title>Produto C067 | Demo de telemetria</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="inventory-shell">
       <header class="inventory-header">
-        <div class="brand-mark" aria-hidden="true">SE</div>
+        <div class="brand-mark" aria-hidden="true">C67</div>
         <div>
           <span class="eyebrow">Aplicação externa de demonstração</span>
-          <h1>Sistema de Estoque</h1>
-          <p>Simule funcionalidades reais e envie eventos para a plataforma.</p>
+          <h1>Produto C067</h1>
+          <p>Execute funcionalidades reais e acompanhe cada evento recebido pela plataforma.</p>
         </div>
         <div class="current-user">
           <span>Usuário atual</span>
@@ -28,29 +28,41 @@
             <span>Operação</span>
             <h2 id="actions-title">Funcionalidades disponíveis</h2>
           </div>
-          <span class="integration-status"><i aria-hidden="true"></i> Tracker server-side</span>
+          <span class="integration-status"><i aria-hidden="true"></i> Telemetria conectada</span>
         </div>
 
         <div class="action-grid">
           <article class="action-card">
             <span class="action-number">01</span>
-            <h3>Cadastrar produto</h3>
-            <p>Simula a inclusão de um novo item no catálogo do estoque.</p>
-            <button type="button" data-action="cadastrar-produto">Cadastrar produto</button>
+            <h3>Acessar painel</h3>
+            <p>Simula a abertura do painel principal por um usuário do produto.</p>
+            <div class="usage-metric">
+              <span>Usos registrados</span>
+              <strong data-event-counter="painel_acessado">—</strong>
+            </div>
+            <button type="button" data-action="acessar-painel">Acessar painel</button>
           </article>
 
           <article class="action-card">
             <span class="action-number">02</span>
-            <h3>Consultar estoque</h3>
-            <p>Simula uma consulta à disponibilidade atual dos produtos.</p>
-            <button type="button" data-action="consultar-estoque">Consultar estoque</button>
+            <h3>Exportar relatório</h3>
+            <p>Simula a exportação de um relatório operacional pelo usuário.</p>
+            <div class="usage-metric">
+              <span>Usos registrados</span>
+              <strong data-event-counter="relatorio_exportado">—</strong>
+            </div>
+            <button type="button" data-action="exportar-relatorio">Exportar relatório</button>
           </article>
 
           <article class="action-card">
             <span class="action-number">03</span>
-            <h3>Gerar relatório</h3>
-            <p>Simula a geração de um relatório consolidado da operação.</p>
-            <button type="button" data-action="gerar-relatorio">Gerar relatório</button>
+            <h3>Executar automação</h3>
+            <p>Simula a execução de uma rotina automatizada dentro do produto.</p>
+            <div class="usage-metric">
+              <span>Usos registrados</span>
+              <strong data-event-counter="automacao_executada">—</strong>
+            </div>
+            <button type="button" data-action="executar-automacao">Executar automação</button>
           </article>
         </div>
       </section>
@@ -60,7 +72,7 @@
         <div>
           <span>Última atividade</span>
           <strong id="activity-title">Nenhuma funcionalidade executada</strong>
-          <p id="activity-detail">Escolha uma ação para enviar o primeiro evento.</p>
+          <p id="activity-detail">Os contadores vêm da plataforma e são atualizados após cada ação.</p>
         </div>
       </section>
     </main>

@@ -162,6 +162,37 @@ h1 {
 
 .action-card p { margin: 10px 0 24px; }
 
+.usage-metric {
+  display: flex;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(37, 217, 232, 0.18);
+  border-radius: 11px;
+  background: rgba(37, 217, 232, 0.05);
+}
+
+.usage-metric span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.usage-metric strong {
+  color: var(--cyan);
+  font-size: 19px;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.usage-metric strong.usage-metric-updated {
+  color: var(--green);
+  transform: scale(1.16);
+}
+
 .action-card button {
   min-height: 44px;
   margin-top: auto;

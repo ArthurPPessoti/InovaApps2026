@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { ensureShowcaseDemo, handleApi } from "./connections-api.mjs";
+import { cleanupLegacyDemoData, ensureShowcaseDemo, handleApi } from "./connections-api.mjs";
 import { ensureProductRiskSchema } from "./product-risk.mjs";
 
 const NOW = new Date("2026-09-19T15:00:00.000Z");
@@ -139,6 +139,54 @@ test("bootstrap disponibiliza NexStock completo e idempotente em uma instalaçã
     SELECT source, plan FROM portfolio_product_risk_profiles WHERE product_id = ?
   `).get(first.productId);
   assert.deepEqual({ ...portfolioRisk }, { source: "demo", plan: "Enterprise" });
+  database.close();
+});
+
+test("limpeza remove somente conexões demonstrativas e legadas conhecidas", () => {
+  const database = createDatabase();
+  const timestamp = NOW.toISOString();
+  const insertCompany = database.prepare(`
+    INSERT INTO portfolio_companies (id, name, normalized_name, created_at)
+    VALUES (?, ?, ?, ?)
+  `);
+  const insertProduct = database.prepare(`
+    INSERT INTO portfolio_products (
+      id, company_id, company_name, name, normalized_name, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const insertApplication = database.prepare(`
+    INSERT INTO connection_applications (
+      id, name, client_name, client_id, integration_status,
+      credential_hash, credential_encrypted, credential_iv, credential_tag,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, 'waiting_integration', 'hash', 'encrypted', 'iv', 'tag', ?, ?)
+  `);
+
+  insertCompany.run("company_demo", "dadadadd", "dadadadd", timestamp);
+  insertProduct.run("product_demo", "company_demo", "dadadadd", "ddd", "ddd", timestamp);
+  insertApplication.run("app_demo", "ddd", "ddd", "product_demo", timestamp, timestamp);
+  insertApplication.run("app_legacy", "Legada", "Legada", null, timestamp, timestamp);
+
+  insertCompany.run("company_real", "Empresa real", "empresa real", timestamp);
+  insertProduct.run("product_real", "company_real", "Empresa real", "Produto real", "produto real", timestamp);
+  insertApplication.run("app_real", "Produto real", "Produto real", "product_real", timestamp, timestamp);
+
+  cleanupLegacyDemoData(database);
+  cleanupLegacyDemoData(database);
+
+  assert.deepEqual(
+    database.prepare("SELECT id FROM connection_applications ORDER BY id").all().map((row) => row.id),
+    ["app_real"],
+  );
+  assert.deepEqual(
+    database.prepare("SELECT id FROM portfolio_products ORDER BY id").all().map((row) => row.id),
+    ["product_real"],
+  );
+  assert.deepEqual(
+    database.prepare("SELECT id FROM portfolio_companies ORDER BY id").all().map((row) => row.id),
+    ["company_real"],
+  );
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM connection_data_migrations").get().count, 1);
   database.close();
 });
 

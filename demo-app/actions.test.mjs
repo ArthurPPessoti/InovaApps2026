@@ -12,14 +12,14 @@ test("cada funcionalidade envia o event name esperado pelo tracker", async () =>
   };
   const actions = createInventoryActions({ tracker });
 
-  await actions["cadastrar-produto"]();
-  await actions["consultar-estoque"]();
-  await actions["gerar-relatorio"]();
+  await actions["acessar-painel"]();
+  await actions["exportar-relatorio"]();
+  await actions["executar-automacao"]();
 
   assert.deepEqual(calls, [
-    { event: "produto_cadastrado", options: { userId: DEMO_USER_ID } },
-    { event: "estoque_consultado", options: { userId: DEMO_USER_ID } },
-    { event: "relatorio_gerado", options: { userId: DEMO_USER_ID } },
+    { event: "painel_acessado", options: { userId: DEMO_USER_ID } },
+    { event: "relatorio_exportado", options: { userId: DEMO_USER_ID } },
+    { event: "automacao_executada", options: { userId: DEMO_USER_ID } },
   ]);
 });
 
@@ -31,5 +31,5 @@ test("falha do tracker é propagada pela funcionalidade", async () => {
   };
   const actions = createInventoryActions({ tracker });
 
-  await assert.rejects(actions["gerar-relatorio"](), /API indisponível/);
+  await assert.rejects(actions["executar-automacao"](), /API indisponível/);
 });

@@ -23,6 +23,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useAuth } from "../auth/AuthContext";
+import { useChurnAnalysis } from "../churn/churnAnalysis";
 import { usePortfolio } from "../features/portfolio/PortfolioContext";
 import { getTemporalProductAnalytics } from "../features/product-analytics/productAnalyticsApi";
 import {
@@ -101,7 +103,7 @@ const comparisonReadinessCopy: Record<TemporalAnalyticsPeriod, string> = {
 
 const chartPeriodCopy: Record<TemporalAnalyticsPeriod, string> = {
   monthly: "Mês atual · séries diárias por funcionalidade",
-  quarterly: "Janela trimestral atual · séries semanais por funcionalidade",
+  quarterly: "Evolução durante o trimestre atual · cada data marca o início de uma semana",
   semiannual: "Janela semestral atual · séries mensais por funcionalidade",
   annual: "Últimos 12 meses · séries mensais por funcionalidade",
 };
@@ -250,8 +252,26 @@ function FeatureChartFilter({
 
 export function ProductTemporalAnalyticsPage() {
   const { clienteId = "" } = useParams();
+  const { account } = useAuth();
+  const { analysis, loading: analysisLoading } = useChurnAnalysis(account?.id);
   const { getProduct, loading: portfolioLoading } = usePortfolio();
   const product = getProduct(clienteId);
+  const prediction = analysis?.predictions.find((item) => item.subjectId === clienteId);
+  const identity = product
+    ? {
+      id: product.id,
+      title: product.productName,
+      subtitle: product.companyName,
+      backLabel: product.productName,
+    }
+    : prediction
+      ? {
+        id: prediction.subjectId,
+        title: `Cliente ${prediction.subjectId}`,
+        subtitle: `${prediction.segment} · Plano ${prediction.plan}`,
+        backLabel: prediction.subjectId,
+      }
+      : null;
   const [period, setPeriod] = useState<TemporalAnalyticsPeriod>("monthly");
   const [analytics, setAnalytics] = useState<TemporalProductAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -294,10 +314,10 @@ export function ProductTemporalAnalyticsPage() {
       : { selection: ALL_FEATURES, features: [], granularity: "monthly" as const, data: [] }
   ), [analytics, selectedFeature]);
 
-  if (portfolioLoading && !product) {
+  if ((portfolioLoading || analysisLoading) && !identity) {
     return <div className="temporal-analytics-state"><SpinnerGap size={26} /> Carregando produto...</div>;
   }
-  if (!product) {
+  if (!identity) {
     return (
       <div className="temporal-analytics-state">
         <WarningCircle size={35} />
@@ -309,15 +329,15 @@ export function ProductTemporalAnalyticsPage() {
 
   return (
     <div className="temporal-analytics-page">
-      <Link className="back-link" to={`/clientes/${product.id}`}>
-        <ArrowLeft size={18} /> Voltar para {product.productName}
+      <Link className="back-link" to={`/clientes/${identity.id}`}>
+        <ArrowLeft size={18} /> Voltar para {identity.backLabel}
       </Link>
 
       <header className="temporal-analytics-header">
         <div>
           <span className="product-analytics-eyebrow"><ChartLineUp size={16} /> Análise de uso</span>
-          <h1>{product.productName}</h1>
-          <p>{product.companyName}</p>
+          <h1>{identity.title}</h1>
+          <p>{identity.subtitle}</p>
         </div>
         <div className="temporal-origin-badge">
           <ClockCounterClockwise size={18} />

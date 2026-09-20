@@ -54,11 +54,9 @@ export function ProductUsageAnalytics({ clientId, demoEvents }: { clientId: stri
               ? "Análise baseada em histórico demonstrativo e telemetria real armazenados para este produto."
               : "Métricas calculadas somente a partir dos eventos que correspondem às funcionalidades monitoradas deste produto."}</p>
         </div>
-        {hasRealApplications && (
-          <Link className="secondary-button product-analytics-full-link" to={`/clientes/${clientId}/analytics`}>
-            Ver análise completa <ArrowRight size={16} />
-          </Link>
-        )}
+        <Link className="secondary-button product-analytics-full-link" to={`/clientes/${clientId}/analytics`}>
+          Ver análise completa <ArrowRight size={16} />
+        </Link>
       </header>
 
       {error ? (

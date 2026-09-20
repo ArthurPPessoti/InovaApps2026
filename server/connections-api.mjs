@@ -37,6 +37,7 @@ const DATA_DIRECTORY = join(process.cwd(), ".data", "connections");
 const DATABASE_PATH = join(DATA_DIRECTORY, "connections.sqlite");
 const ENCRYPTION_KEY_PATH = join(DATA_DIRECTORY, "credential.key");
 const LEGACY_APPLICATION_TYPE_VALUE = "internal";
+const LEGACY_DEMO_CLEANUP_KEY = "remove-mixed-demo-portfolio-v1";
 const SHOWCASE_DEMO = {
   company: {
     id: "company_nexora_demo",
@@ -236,7 +237,60 @@ function openDatabase() {
       "[connections-api] Índice único por produto não criado: há client_id duplicado. Nenhum registro foi alterado.",
     );
   }
+  cleanupLegacyDemoData(database);
   return database;
+}
+
+export function cleanupLegacyDemoData(database) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS connection_data_migrations (
+      key TEXT PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    );
+  `);
+  const alreadyApplied = database.prepare(`
+    SELECT 1 FROM connection_data_migrations WHERE key = ?
+  `).get(LEGACY_DEMO_CLEANUP_KEY);
+  if (alreadyApplied) return;
+
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    database.prepare(`
+      DELETE FROM connection_applications
+      WHERE client_id IS NULL
+         OR client_id = 'atlas-logistica'
+         OR client_id IN (
+           SELECT id
+           FROM portfolio_products
+           WHERE id = 'product_f3bede39f94b'
+              OR normalized_name IN ('ddd', 'fff', 'nexstock — gestao de estoque')
+         )
+    `).run();
+    database.prepare(`
+      DELETE FROM portfolio_products
+      WHERE NOT EXISTS (
+        SELECT 1 FROM connection_applications WHERE client_id = portfolio_products.id
+      )
+        AND (
+          id = 'product_f3bede39f94b'
+          OR normalized_name IN ('ddd', 'fff', 'nexstock — gestao de estoque')
+        )
+    `).run();
+    database.prepare(`
+      DELETE FROM portfolio_companies
+      WHERE NOT EXISTS (
+        SELECT 1 FROM portfolio_products WHERE company_id = portfolio_companies.id
+      )
+        AND normalized_name IN ('nexora distribuicao', 'dadadadd', 'ff')
+    `).run();
+    database.prepare(`
+      INSERT INTO connection_data_migrations (key, applied_at) VALUES (?, ?)
+    `).run(LEGACY_DEMO_CLEANUP_KEY, new Date().toISOString());
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function listApplications(database) {
@@ -1076,14 +1130,6 @@ async function handleApi(request, response, database, encryptionKey) {
 function installMiddleware(server) {
   const database = openDatabase();
   const encryptionKey = loadEncryptionKey();
-  try {
-    const showcase = ensureShowcaseDemo(database, encryptionKey);
-    console.info(
-      `[showcase-demo] NexStock disponível com ${showcase.seed.totalDemoEvents} eventos demonstrativos.`,
-    );
-  } catch (error) {
-    console.error("[showcase-demo] Não foi possível preparar o exemplo NexStock:", error);
-  }
 
   server.httpServer?.once("close", () => database.close());
   server.middlewares.use(async (request, response, next) => {

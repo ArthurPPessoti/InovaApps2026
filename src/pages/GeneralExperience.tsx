@@ -27,6 +27,7 @@ import type { CanonicalDataset, ChurnBand, SpreadsheetInspection, SpreadsheetMap
 import { formatCurrency } from "../components/StatusUI";
 import { ConnectedPredictiveScenarios } from "../churn/ConnectedPredictiveScenarios";
 import { ClientPredictiveContext } from "../churn/ClientPredictiveContext";
+import { ProductUsageAnalytics } from "../features/product-analytics/ProductUsageAnalytics";
 
 const bandColors: Record<ChurnBand, string> = { LOW: "#00f3ff", ATTENTION: "#ffba49", HIGH: "#ff6b78", CRITICAL: "#ff3355" };
 
@@ -275,6 +276,10 @@ export function GeneralClientDetailPage() {
       </section>
 
       <ClientPredictiveContext prediction={prediction} analysis={analysis} telemetry={telemetry} />
+
+      {account?.profile === "technology" && (
+        <ProductUsageAnalytics clientId={prediction.subjectId} demoEvents={[]} />
+      )}
 
       <details className="detail-audit panel">
         <summary><span><Database size={16} /> Ver dados complementares e recomendações</span><small>Detalhamento para auditoria da análise</small></summary>

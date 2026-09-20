@@ -31,6 +31,10 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 const tracker = createTracker({ applicationId, credential, endpoint });
 const actions = createInventoryActions({ tracker });
 const publicDirectory = fileURLToPath(new URL("./public/", import.meta.url));
+const usageEndpoint = new URL(
+  `/api/product-analytics/applications/${encodeURIComponent(applicationId)}/summary`,
+  endpoint,
+);
 
 const staticFiles = new Map([
   ["/", { file: "index.html", type: "text/html; charset=utf-8" }],
@@ -57,6 +61,23 @@ function sendStaticFile(response, file) {
   createReadStream(join(publicDirectory, file.file)).pipe(response);
 }
 
+async function loadUsage() {
+  const usageResponse = await fetch(usageEndpoint, {
+    headers: { Accept: "application/json" },
+  });
+  const payload = await usageResponse.json().catch(() => null);
+  if (!usageResponse.ok) {
+    throw new Error(payload?.error ?? `A plataforma recusou a consulta com status ${usageResponse.status}.`);
+  }
+
+  return {
+    application: payload.application,
+    metrics: payload.metrics,
+    dataOrigins: payload.dataOrigins,
+    features: payload.features,
+  };
+}
+
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? `${host}:${port}`}`);
 
@@ -71,6 +92,18 @@ const server = createServer(async (request, response) => {
       applicationId,
       userId: DEMO_USER_ID,
     });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/usage") {
+    try {
+      sendJson(response, 200, await loadUsage());
+    } catch (error) {
+      console.error("[demo-app] Falha ao consultar o uso:", error.message);
+      sendJson(response, 502, {
+        error: "Não foi possível consultar os contadores na plataforma.",
+      });
+    }
     return;
   }
 
