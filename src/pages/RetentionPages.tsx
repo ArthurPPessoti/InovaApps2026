@@ -20,10 +20,14 @@ import {
 import { type FormEvent, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { churnBandLabel, isAttention, primaryRiskReason } from "../churn/analysisAdapters";
+import { useChurnAnalysis } from "../churn/churnAnalysis";
+import { clientTechnologyTelemetry } from "../churn/technologySignals";
+import type { ChurnAnalysis } from "../churn/types";
 import { AddClientSheet } from "../components/AddClientSheet";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
 import { type RegisteredClient, useRegisteredClients } from "../data/clientRegistry";
-import { attentionCompanies, companies as mockCompanies, companyPortfolioSummary, getCompany, portfolioProducts, productPortfolioSummary } from "../data/mockData";
+import { attentionCompanies, companies as mockCompanies, getCompany, portfolioProducts } from "../data/mockData";
 import { ProductTelemetryStatus } from "../features/portfolio/ProductTelemetryStatus";
 import { usePortfolio } from "../features/portfolio/PortfolioContext";
 import {
@@ -68,6 +72,7 @@ function NewClientRow({ client, view }: { client: RegisteredClient; view: "produ
 }
 
 function ActiveClients({
+  analysis,
   attentionOnly,
   view,
   registered,
@@ -75,6 +80,7 @@ function ActiveClients({
   onViewChange,
   onTelemetryFilterChange,
 }: {
+  analysis: ChurnAnalysis | null;
   attentionOnly: boolean;
   view: "produtos" | "empresas";
   registered: RegisteredClient[];
@@ -87,7 +93,11 @@ function ActiveClients({
   const hasTelemetry = account?.profile === "technology";
   const effectiveTelemetryFilter = hasTelemetry ? telemetryFilter : "all";
   const telemetryFor = (productId: string) => getProduct(productId)?.telemetry ?? disconnectedProductTelemetry;
-  const newClients = attentionOnly || effectiveTelemetryFilter === "connected" ? [] : registered;
+  const newClients = analysis || attentionOnly || effectiveTelemetryFilter === "connected" ? [] : registered;
+  const visibleAnalyzedProducts = (analysis?.predictions ?? []).filter((prediction) => (
+    (!attentionOnly || isAttention(prediction))
+    && effectiveTelemetryFilter !== "disconnected"
+  ));
   const visibleProducts = portfolioProducts.filter((product) => (
     (!attentionOnly || product.riskLevel !== "Baixo")
     && matchesTelemetryFilter(telemetryFor(product.id), effectiveTelemetryFilter)
@@ -111,7 +121,7 @@ function ActiveClients({
     }))
     .filter((item) => item.company);
   const visibleCount = view === "produtos"
-    ? newClients.length + visibleProducts.length + visiblePersistedProducts.length
+    ? analysis ? visibleAnalyzedProducts.length : newClients.length + visibleProducts.length + visiblePersistedProducts.length
     : newClients.length + visibleCompanies.length + additionalCompanies.length;
 
   return (
@@ -157,12 +167,17 @@ function ActiveClients({
           <tbody>
             {newClients.map((client) => <NewClientRow key={client.id} client={client} view={view} />)}
             {view === "produtos" ? <>
+            {analysis ? visibleAnalyzedProducts.map((prediction) => {
+              const telemetry = hasTelemetry ? clientTechnologyTelemetry(analysis, prediction.subjectId) : undefined;
+              return <tr key={prediction.subjectId}><td><strong>{prediction.subjectId}</strong><small>Cliente da base · {prediction.plan}</small>{telemetry && <ProductTelemetryStatus telemetry={{ connected: true, applicationId: prediction.subjectId, featureCount: telemetry.features.length }} />}</td><td>{prediction.segment}</td><td><span className={`churn-band churn-band--${prediction.probabilityBand.toLowerCase()}`}>{churnBandLabel[prediction.probabilityBand]} · {Math.round(prediction.probability * 100)}%</span></td><td className="revenue-cell">{formatCurrency(prediction.monthlyRevenue)}</td><td className="signal-cell">{telemetry?.summary ?? primaryRiskReason(prediction)}</td><td><Link className="table-action" to={`/clientes/${prediction.subjectId}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>;
+            }) : <>
             {visibleProducts.map((product) => { const company = getCompany(product.companyId)!; const telemetry = telemetryFor(product.id); return (
               <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small>{hasTelemetry && <ProductTelemetryStatus telemetry={telemetry} />}</td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{hasTelemetry ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
             ); })}
             {visiblePersistedProducts.map((product) => (
               <tr key={product.id}><td><strong>{product.productName}</strong><small>{product.companyName} · Dados comerciais não informados</small>{hasTelemetry && <ProductTelemetryStatus telemetry={product.telemetry} />}</td><td>Não informado</td><td>Sem dados</td><td className="revenue-cell">Não informado</td><td className="signal-cell">Sem evidência comercial</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
             ))}
+            </>}
           </> : <>
             {visibleCompanies.map((portfolio) => {
               const extraProducts = persistedByCompany.get(portfolio.company.id)?.length ?? 0;
@@ -231,17 +246,21 @@ function CancelledClients() {
 }
 
 export function ClientsPage() {
+  const { account } = useAuth();
+  const { analysis } = useChurnAnalysis(account?.id);
   const { persistedProducts, companies } = usePortfolio();
+  const registered = useRegisteredClients();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get("status") as ClientTab | null) ?? "atencao";
   const view = searchParams.get("visao") === "empresas" ? "empresas" : "produtos";
   const telemetryFilter: TelemetryFilter = searchParams.get("telemetria") === "conectada"
     ? "connected"
     : searchParams.get("telemetria") === "desconectada" ? "disconnected" : "all";
-  const newPersistedCompanyCount = companies.filter((company) => company.source === "persisted").length;
+  const activeCompanyCount = new Set([
+    ...attentionCompanies.map((portfolio) => portfolio.company.id),
+    ...persistedProducts.map((product) => product.companyId),
+  ]).size + registered.length;
   const setParam = (key: string, value: string, defaultValue: string) => { const next = new URLSearchParams(searchParams); if (value === defaultValue) next.delete(key); else next.set(key, value); setSearchParams(next, { replace: true }); };
-  const { account } = useAuth();
-  const registered = useRegisteredClients();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addedMessage, setAddedMessage] = useState("");
 
@@ -258,13 +277,14 @@ export function ClientsPage() {
         <button type="button" className="primary-button" onClick={() => setSheetOpen(true)}><Plus size={17} weight="bold" /> Adicionar cliente</button>
       </header>
       <div className="lifecycle-tabs" role="tablist" aria-label="Situação dos clientes">
-        <button type="button" role="tab" aria-selected={tab === "ativos"} className={tab === "ativos" ? "active" : ""} onClick={() => setParam("status", "ativos", "atencao")}>Ativos <span>{view === "produtos" ? productPortfolioSummary.activeProducts + persistedProducts.length + registered.length : companyPortfolioSummary.activeCompanies + newPersistedCompanyCount + registered.length}</span></button>
-        <button type="button" role="tab" aria-selected={tab === "atencao"} className={tab === "atencao" ? "active" : ""} onClick={() => setParam("status", "atencao", "atencao")}>Em atenção <span>{view === "produtos" ? productPortfolioSummary.attentionProducts : companyPortfolioSummary.attentionCompanies}</span></button>
+        <button type="button" role="tab" aria-selected={tab === "ativos"} className={tab === "ativos" ? "active" : ""} onClick={() => setParam("status", "ativos", "atencao")}>Ativos <span>{view === "produtos" ? analysis?.predictions.length ?? portfolioProducts.length + persistedProducts.length + registered.length : activeCompanyCount}</span></button>
+        <button type="button" role="tab" aria-selected={tab === "atencao"} className={tab === "atencao" ? "active" : ""} onClick={() => setParam("status", "atencao", "atencao")}>Em atenção <span>{view === "produtos" ? analysis?.predictions.filter(isAttention).length ?? portfolioProducts.filter((product) => product.riskLevel !== "Baixo").length : attentionCompanies.length}</span></button>
         <button type="button" role="tab" aria-selected={tab === "cancelados"} className={tab === "cancelados" ? "active" : ""} onClick={() => setParam("status", "cancelados", "atencao")}>Cancelados <span>{cancelledClients.length}</span></button>
       </div>
       <p className="client-added" role="status">{addedMessage && <><CheckCircle size={16} weight="fill" /> {addedMessage}</>}</p>
       {tab === "cancelados" ? <CancelledClients /> : (
         <ActiveClients
+          analysis={analysis}
           attentionOnly={tab === "atencao"}
           view={view}
           registered={registered}

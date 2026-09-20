@@ -138,6 +138,8 @@ export interface EntityAnalysis {
   displayName: string;
   estimate: number;
   estimateKind: "score" | "probability";
+  /** Posição relativa dentro da própria fonte. Só existe no modo score, onde o valor é fila e não gravidade. */
+  percentile?: number;
   band: "LOW" | "ATTENTION" | "HIGH" | "CRITICAL" | "INSUFFICIENT";
   coverage: number;
   businessValue?: number;

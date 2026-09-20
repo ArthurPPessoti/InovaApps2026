@@ -1,4 +1,4 @@
-# INOVAAPPS 2026
+# Solução proposta pelo grupo
 
 ## Plataforma adaptativa de predição, retenção e gestão de clientes
 
@@ -6,7 +6,7 @@
 **Versão:** 1.0  
 **Data:** 20 de setembro de 2026
 
-> O INOVAAPPS não é apenas um dashboard. É uma plataforma de inteligência de clientes que conecta dados, identifica antecipadamente riscos de perda de valor, explica cada alerta e transforma a previsão em trabalho organizado para a equipe.
+> A solução proposta pelo grupo não é apenas um dashboard. É uma plataforma de inteligência de clientes que conecta dados, identifica antecipadamente riscos de perda de valor, explica cada alerta e transforma a previsão em trabalho organizado para a equipe.
 
 ---
 
@@ -43,14 +43,13 @@ Este documento apresenta uma proposta técnica e de governança baseada na legis
 23. Segurança, isolamento e auditoria
 24. Monitoramento e governança dos modelos
 25. Produto, escalabilidade e modelo de negócio
-26. Demonstração para o hackathon
-27. Estado atual, simulações e evolução
-28. Roadmap de implementação
-29. Indicadores de sucesso
-30. Riscos e medidas de mitigação
-31. Conclusão
-32. Glossário
-33. Apêndices técnicos
+26. Estado atual, simulações e evolução
+27. Roadmap de implementação
+28. Indicadores de sucesso
+29. Riscos e medidas de mitigação
+30. Conclusão
+31. Glossário
+32. Apêndices técnicos
 
 ---
 
@@ -58,7 +57,7 @@ Este documento apresenta uma proposta técnica e de governança baseada na legis
 
 O desafio apresentado pela Globalsys pergunta como identificar, entre os clientes ainda ativos, quais estão próximos de cancelar ou sofrendo degradação antes que eles avisem, explicando a evidência que sustenta o alerta e indicando o que deve ser feito.
 
-O INOVAAPPS resolve esse problema por meio de um ciclo completo:
+A solução proposta pelo grupo resolve esse problema por meio de um ciclo completo:
 
 ```text
 Dados da empresa
@@ -134,7 +133,7 @@ A pessoa responsável pela carteira deve conseguir responder rapidamente:
 
 Um cliente pode parecer saudável no agregado e, ao mesmo tempo, estar abandonando uma funcionalidade essencial. Da mesma forma, um cliente pode acessar o sistema regularmente, mas enfrentar SLA ruim, chamados críticos ou redução de valor percebido.
 
-Por isso, o INOVAAPPS não usa uma única métrica e não interpreta login como sinônimo de satisfação. A leitura combina comportamento, atendimento, relacionamento, contrato, financeiro e contexto.
+Por isso, a solução não usa uma única métrica e não interpreta login como sinônimo de satisfação. A leitura combina comportamento, atendimento, relacionamento, contrato, financeiro e contexto.
 
 ---
 
@@ -196,7 +195,7 @@ O produto procura esses sinais antes que a decisão se torne irreversível.
 
 # 4. Por que não é somente um dashboard
 
-Um dashboard apenas exibe informações. O INOVAAPPS forma uma cadeia operacional completa.
+Um dashboard apenas exibe informações. A solução proposta pelo grupo forma uma cadeia operacional completa.
 
 | Camada | Função |
 |---|---|
@@ -996,7 +995,65 @@ Essa associação deve apresentar evidência e nunca afirmar causalidade sem val
 
 ## 18.1 Diferencial central
 
-Para empresas tecnológicas, o produto pode receber sinais diretamente das aplicações. Assim, não depende somente de uma planilha atualizada no fim do mês.
+Para empresas tecnológicas, a solução pode receber sinais diretamente das aplicações. Isso permite identificar perda de valor durante o uso, antes que o problema apareça em uma pesquisa, em uma reclamação formal ou no pedido de cancelamento.
+
+O diferencial não é apenas saber que o cliente fez login. É entender se ele continua obtendo valor das funcionalidades relevantes para o contrato. A plataforma compara o comportamento recente de cada produto com seu próprio histórico e procura mudanças como:
+
+- queda persistente no uso de uma funcionalidade importante;
+- abandono de uma etapa que antes era concluída;
+- aumento de erros ou tentativas interrompidas;
+- redução de usuários ativos;
+- maior intervalo entre utilizações;
+- concentração do uso em funções básicas, com abandono das funções que justificam o plano contratado.
+
+### Exemplo operacional
+
+Considere um cliente que continua acessando o sistema, mas reduziu em 43% o uso da funcionalidade **Exportação de relatórios** nos últimos 30 dias, em comparação com sua média dos 90 dias anteriores. Ao mesmo tempo, duas tentativas recentes terminaram em erro.
+
+A solução transforma esses eventos em um alerta compreensível:
+
+> O uso de Exportação de relatórios caiu 43% e a funcionalidade apresentou duas falhas recentes. Isso pode indicar dificuldade operacional, perda de valor percebido ou mudança no processo do cliente. Vale entrar em contato para entender a causa e oferecer suporte ou melhoria.
+
+Esse alerta não afirma que o cliente está insatisfeito. Ele apresenta uma hipótese sustentada por evidências e antecipa uma conversa que normalmente só aconteceria após uma reclamação ou perda do contrato.
+
+### Do sinal à ação
+
+```text
+Queda observada em uma funcionalidade
+      ↓
+Comparação com o histórico do próprio cliente
+      ↓
+Validação com suporte, SLA, NPS, contrato e contexto
+      ↓
+Alerta explicável para o time responsável
+      ↓
+Contato humano para diagnóstico
+      ↓
+Suporte, treinamento, correção ou melhoria do produto
+      ↓
+Registro do resultado da intervenção
+```
+
+Na prática, o tracking ajuda o time a responder quatro perguntas:
+
+1. **Onde o valor está diminuindo?** Em qual produto, funcionalidade ou etapa.
+2. **Quanto o comportamento mudou?** Diferença percentual, frequência, recência e duração da tendência.
+3. **Quem deve ser priorizado?** Clientes com queda relevante, impacto financeiro e evidências combinadas.
+4. **Qual conversa deve acontecer?** Uma abordagem consultiva baseada no resultado que deixou de ser alcançado.
+
+### Como demonstrar efetividade real
+
+A efetividade do tracking não deve ser provada pela quantidade de eventos coletados. Deve ser medida pelo resultado operacional gerado:
+
+- antecedência média entre o primeiro sinal e uma reclamação ou cancelamento;
+- proporção de alertas confirmados pelo time após contato;
+- redução de falsos positivos;
+- recuperação do uso após suporte, treinamento ou correção;
+- diminuição de erros em funcionalidades críticas;
+- retenção de contratos e receita associada às intervenções;
+- melhorias de produto originadas por padrões recorrentes de dificuldade.
+
+O protótipo demonstra o fluxo e utiliza telemetria simulada na conta tecnológica. Em produção, esses indicadores precisam ser acompanhados para comprovar quanto o tracking aumenta a antecedência, melhora a priorização e contribui para retenção. Essa distinção evita apresentar uma hipótese promissora como resultado já validado.
 
 Exemplos:
 
@@ -1546,98 +1603,9 @@ O diferencial acumulativo surge da combinação de:
 
 ---
 
-# 26. Demonstração para o hackathon
+# 26. Estado atual, simulações e evolução
 
-## 26.1 Cena 1 - O impacto
-
-Abrir a Visão geral e mostrar:
-
-- 58 clientes ativos analisados;
-- clientes em atenção;
-- receita mensal esperada em risco;
-- ranking calculado pela base.
-
-Mensagem:
-
-> “Hoje a empresa não precisa esperar o cancelamento. Ela consegue enxergar onde existe risco e quanto valor está exposto.”
-
-## 26.2 Cena 2 - A explicação
-
-Abrir um cliente de alto risco e mostrar:
-
-- probabilidade em 90 dias;
-- uso, SLA, chamados e NPS;
-- fatores de risco e proteção;
-- comparação com a carteira;
-- dados complementares;
-- limitações.
-
-Mensagem:
-
-> “O número nunca aparece sozinho. Toda classificação possui rastreabilidade.”
-
-## 26.3 Cena 3 - O risco silencioso
-
-Mostrar um caso com acesso ainda regular, mas deterioração em função crítica ou atendimento.
-
-Mensagem:
-
-> “Saúde geral pode esconder perda de valor em uma parte essencial do produto.”
-
-## 26.4 Cena 4 - A conexão real
-
-Executar uma função no sistema externo demonstrativo e mostrar o evento chegando à plataforma.
-
-Mensagem:
-
-> “A plataforma não depende apenas de uma planilha. Uma aplicação pode enviar eventos por HTTP conforme o uso acontece.”
-
-## 26.5 Cena 5 - A ação
-
-Abrir Gestão e mostrar:
-
-- prioridade;
-- responsável;
-- prazo;
-- abordagem recomendada;
-- rascunho editável;
-- progressão do caso.
-
-Mensagem:
-
-> “A predição vira trabalho executável, não mais um gráfico esquecido.”
-
-## 26.6 Cena 6 - A adaptação
-
-Abrir Dados, enviar outra planilha e mostrar:
-
-- perfil automático;
-- objetivos sugeridos;
-- pesos por pills;
-- editor manual;
-- dashboard modular.
-
-Mensagem:
-
-> “A base do hackathon não é uma limitação do produto. É uma das configurações possíveis.”
-
-## 26.7 Cena 7 - O aprendizado
-
-Abrir Cancelados, preparar pesquisa e mostrar o aprendizado ligado a clientes ativos.
-
-Mensagem:
-
-> “O cancelamento deixa de ser apenas perda e passa a alimentar prevenção.”
-
-## 26.8 Encerramento
-
-> “O INOVAAPPS conecta o que aconteceu, o que pode acontecer e o que o time fará agora.”
-
----
-
-# 27. Estado atual, simulações e evolução
-
-## 27.1 Implementado no protótipo
+## 26.1 Implementado no protótipo
 
 - login e onboarding por perfil;
 - conta tecnológica e conta geral;
@@ -1657,7 +1625,7 @@ Mensagem:
 - eventos e analytics de produto;
 - identidade visual Globalsys.
 
-## 27.2 Demonstrativo ou local
+## 26.2 Demonstrativo ou local
 
 - autenticação simplificada;
 - persistência parcial em navegador;
@@ -1668,7 +1636,7 @@ Mensagem:
 - envio manual por Gmail;
 - sem sincronização real entre dispositivos em módulos locais.
 
-## 27.3 Necessário para produção
+## 26.3 Necessário para produção
 
 - autenticação real e MFA;
 - banco multiempresa;
@@ -1689,7 +1657,7 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 
 ---
 
-# 28. Roadmap de implementação
+# 27. Roadmap de implementação
 
 ## Fase 1 - Produto confiável
 
@@ -1753,9 +1721,9 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 
 ---
 
-# 29. Indicadores de sucesso
+# 28. Indicadores de sucesso
 
-## 29.1 Produto
+## 28.1 Produto
 
 - tempo até a primeira análise;
 - percentual de fontes configuradas sem suporte;
@@ -1764,7 +1732,7 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 - usuários ativos por perfil;
 - tempo para entender uma classificação.
 
-## 29.2 Modelo
+## 28.2 Modelo
 
 - PR AUC;
 - Brier Score;
@@ -1775,7 +1743,7 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 - alertas falsos;
 - clientes com dados insuficientes.
 
-## 29.3 Operação
+## 28.3 Operação
 
 - tempo entre alerta e primeiro contato;
 - casos sem responsável;
@@ -1786,7 +1754,7 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 - receita perdida;
 - tempo entre primeiro sinal e cancelamento.
 
-## 29.4 Negócio
+## 28.4 Negócio
 
 - redução de churn;
 - expansão de receita;
@@ -1798,7 +1766,7 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 
 ---
 
-# 30. Riscos e medidas de mitigação
+# 29. Riscos e medidas de mitigação
 
 | Risco | Mitigação |
 |---|---|
@@ -1819,9 +1787,9 @@ Essa separação protege a credibilidade: o protótipo demonstra a solução com
 
 ---
 
-# 31. Conclusão
+# 30. Conclusão
 
-O INOVAAPPS responde diretamente ao desafio da Globalsys: identificar clientes ativos em risco, explicar a evidência e indicar a ordem de atuação.
+A solução proposta pelo grupo responde diretamente ao desafio da Globalsys: identificar clientes ativos em risco, explicar a evidência e indicar a ordem de atuação.
 
 Ao mesmo tempo, a solução ultrapassa o formato de um dashboard porque cria uma infraestrutura reutilizável para:
 
@@ -1842,7 +1810,7 @@ O principal diferencial pode ser resumido em uma frase:
 
 ---
 
-# 32. Glossário
+# 31. Glossário
 
 | Termo | Definição |
 |---|---|
@@ -1868,7 +1836,7 @@ O principal diferencial pode ser resumido em uma frase:
 
 ---
 
-# 33. Apêndices técnicos
+# 32. Apêndices técnicos
 
 ## A. APIs do fluxo adaptativo
 
@@ -1911,29 +1879,7 @@ COBERTURA:
 100 × soma dos pesos observados / soma dos pesos configurados
 ```
 
-## D. Checklist antes de ativar tracking
-
-- [ ] Finalidade documentada.
-- [ ] Base legal avaliada.
-- [ ] Contrato ou aditivo assinado.
-- [ ] DPA vigente.
-- [ ] Anexo técnico aprovado.
-- [ ] Aviso de privacidade atualizado.
-- [ ] Catálogo de eventos revisado.
-- [ ] Dados proibidos bloqueados.
-- [ ] Identificadores pseudonimizados.
-- [ ] Retenção definida.
-- [ ] Credencial armazenada em cofre.
-- [ ] HTTPS obrigatório.
-- [ ] Rate limit e idempotência ativos.
-- [ ] Suboperadores registrados.
-- [ ] Transferência internacional avaliada.
-- [ ] RIPD avaliado.
-- [ ] Plano de incidente testado.
-- [ ] Canal de direitos disponível.
-- [ ] Acessos auditáveis.
-
-## E. Critérios de aceite para produção
+## D. Critérios de aceite para produção
 
 ### Dados
 
@@ -1970,14 +1916,14 @@ COBERTURA:
 - [ ] Incidentes possuem fluxo e prazo.
 - [ ] Contratos e avisos correspondem à arquitetura real.
 
-## F. Referências
+## E. Referências
 
 ### Materiais do desafio e do projeto
 
 - Globalsys. **Desafio INOVAAPPS 2026**. Documento fornecido aos participantes.
 - `INOVAAPPS_base_de_dados.xlsx`. Base fornecida para o desafio.
 - `Relatorio_Algoritmo_Generico_Risco_Cancelamento_V3.md`. Especificação técnica do score genérico.
-- Código-fonte e artefato `churn-model.json` do protótipo INOVAAPPS 2026.
+- Código-fonte e artefato `churn-model.json` do protótipo desenvolvido pelo grupo.
 
 ### Referências jurídicas oficiais
 

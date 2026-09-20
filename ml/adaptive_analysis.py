@@ -52,6 +52,18 @@ def norm(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
 
 
+ISO_DATE = re.compile(r"^\s*\d{4}-\d{1,2}([-/]\d{1,2})?")
+
+
+def parsed_dates(series: pd.Series) -> pd.Series:
+    """`dayfirst` só para formatos ambíguos: aplicado a ISO ele troca mês por dia
+    (2025-12-01 vira 12/01) e descarta todo dia acima de 12 como data inválida."""
+    if pd.api.types.is_datetime64_any_dtype(series): return series
+    sample = series.dropna().astype(str)
+    iso = bool(len(sample)) and sample.str.match(ISO_DATE).mean() >= .8
+    return pd.to_datetime(series, errors="coerce", dayfirst=not iso)
+
+
 def read_workbook(path: Path) -> dict[str, pd.DataFrame]:
     if path.suffix.lower() == ".csv":
         for encoding in ("utf-8-sig", "utf-8", "latin-1"):
@@ -75,7 +87,7 @@ def physical_type(series: pd.Series) -> str:
     if pd.api.types.is_datetime64_any_dtype(observed):
         return "date"
     if any(hint in norm(series.name) for hint in TIME_HINTS):
-        converted = pd.to_datetime(observed, errors="coerce", dayfirst=True)
+        converted = parsed_dates(observed)
         if len(converted) and converted.notna().mean() >= 0.85:
             return "date"
     return "category" if observed.nunique() <= min(50, max(12, len(observed) * 0.2)) else "text"
@@ -168,7 +180,7 @@ def profile_workbook(path: Path, file_name: str | None = None) -> tuple[dict[str
         keys = [c["name"] for c in columns if c["semanticRole"] == "ENTITY_ID"]
         for column in columns:
             if column["physicalType"] == "date":
-                dates.extend(pd.to_datetime(frame[column["name"]], errors="coerce", dayfirst=True).dropna().tolist())
+                dates.extend(parsed_dates(frame[column["name"]]).dropna().tolist())
         sheets.append({"name": str(sheet_name), "rows": int(len(frame)), "columns": columns, "candidateKeys": keys})
     all_columns = [c for s in sheets for c in s["columns"]]
     roles = {c["semanticRole"] for c in all_columns}
@@ -204,18 +216,30 @@ def default_config(profile: dict[str, Any]) -> dict[str, Any]:
     target_hit = next(((s["name"], c["name"]) for s in profile["sheets"] for c in s["columns"] if c["semanticRole"] == "TARGET"), (None, None))
     metrics = []
     for sheet in profile["sheets"]:
+        # Painel = tem data e mais linhas que entidades, então a série tem tendência a medir.
+        panel = sheet["rows"] > entity_sheet["rows"] and any(c["physicalType"] == "date" for c in sheet["columns"])
         for column in sheet["columns"]:
-            included = column["semanticRole"] in ("METRIC", "BUSINESS_VALUE") and column["variability"] > 0
+            included = column["semanticRole"] == "METRIC" and column["variability"] > 0
             name = norm(column["name"])
+            # Sem correspondência de nome a direção do risco é desconhecida: INFORMATIONAL
+            # deixa a coluna visível no editor e fora da conta até alguém confirmar a direção.
             risk_type = "HIGH_IS_RISK" if any(h in name for h in RISK_HIGH_HINTS) else "LOW_IS_RISK" if any(h in name for h in RISK_LOW_HINTS) else "INFORMATIONAL"
-            if included and risk_type == "INFORMATIONAL": risk_type = "HIGH_IS_RISK"
-            metrics.append({
+            base_metric = {
                 "id": f"{sheet['name']}::{column['name']}", "sheet": sheet["name"], "column": column["name"],
                 "meaning": column["semanticMeaning"], "role": column["semanticRole"], "included": included,
                 "riskType": risk_type, "aggregation": "MEAN" if column["physicalType"] == "number" else "LATEST",
                 "importance": "MEDIUM", "scale": "AUTO", "missingStrategy": "EXCLUDE",
                 "confidence": column["confidence"], "rationale": "Sugestão determinística baseada no tipo, nome e variabilidade da coluna.",
-            })
+            }
+            metrics.append(base_metric)
+            if included and risk_type != "INFORMATIONAL" and column["physicalType"] == "number" and panel:
+                # A inclinação corre no mesmo sentido do nível: subir o que é ruim é risco,
+                # cair o que é bom também. Nível e tendência entram com o mesmo peso.
+                metrics.append({
+                    **base_metric, "id": f"{sheet['name']}::{column['name']}::trend",
+                    "meaning": f"{column['semanticMeaning']} (tendência)", "aggregation": "TREND",
+                    "rationale": "Inclinação da série da própria coluna; separa quem está piorando de quem está estável.",
+                })
     return {
         "schemaVersion": "2.0", "id": str(uuid.uuid4()), "createdAt": datetime.now(timezone.utc).isoformat(),
         "objective": {"entitySheet": entity_sheet["name"], "entityColumn": entity_column, "entityLabel": "cliente", "entityLabelPlural": "clientes", "behavior": suggestion["behavior"], "eventPolarity": "negative", "targetSheet": target_hit[0], "targetColumn": target_hit[1], "positiveValues": ["cancelado", "inativo", "sim", "1", "true"], "horizonDays": suggestion["horizonDays"], "confirmed": False},
@@ -249,59 +273,95 @@ def aggregate(series: pd.Series, method: str) -> Any:
     if method == "SUM" and numeric.notna().any(): return numeric.sum()
     if method == "MIN" and numeric.notna().any(): return numeric.min()
     if method == "MAX" and numeric.notna().any(): return numeric.max()
-    if method == "TREND" and numeric.notna().sum() >= 2:
+    if method == "TREND":
+        if numeric.notna().sum() < 2: return np.nan
         values = numeric.dropna().to_numpy()
         return float(np.polyfit(np.arange(len(values)), values, 1)[0])
     return observed.iloc[-1] if method == "LATEST" else observed.iloc[0]
 
 
-def entity_table(frames: dict[str, pd.DataFrame], config: dict[str, Any]) -> pd.DataFrame:
+def entity_key(config: dict[str, Any], frames: dict[str, pd.DataFrame], sheet: str) -> str | None:
+    """Coluna que liga `sheet` à entidade: a própria chave, ou a relação confirmada."""
+    base_sheet, entity_col = config["objective"]["entitySheet"], config["objective"]["entityColumn"]
+    if entity_col in frames[sheet].columns: return entity_col
+    for relationship in config.get("relationships", []):
+        if relationship["leftSheet"] == sheet and relationship["rightSheet"] == base_sheet: return relationship["leftColumn"]
+        if relationship["rightSheet"] == sheet and relationship["leftSheet"] == base_sheet: return relationship["rightColumn"]
+    return None
+
+
+def sheet_date_column(frame: pd.DataFrame) -> str | None:
+    return next((str(column) for column in frame.columns if physical_type(frame[column]) == "date"), None)
+
+
+def entity_timeline(config: dict[str, Any], frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Primeira e última observação de cada entidade, sobre a fonte inteira.
+
+    `__time` é a entrada (não é causada pelo desfecho, então pode ordenar o split);
+    `__last` é a última vez que a entidade foi vista, usada só para saber se o
+    desfecho já tinha acontecido em um corte — nunca como preditor.
+    """
+    spans = []
+    for sheet, frame in frames.items():
+        column, key = sheet_date_column(frame), entity_key(config, frames, sheet)
+        if column is None or key is None: continue
+        dated = frame.assign(__entity=frame[key].astype(str), __parsed=parsed_dates(frame[column])).dropna(subset=["__parsed"])
+        if dated.empty: continue
+        spans.append(dated.groupby("__entity")["__parsed"].agg(["min", "max"]))
+    if not spans: return pd.DataFrame(columns=["__time", "__last"])
+    merged = pd.concat(spans)
+    return merged.groupby(level=0).agg({"min": "min", "max": "max"}).rename(columns={"min": "__time", "max": "__last"})
+
+
+def rows_before(frame: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
+    column = sheet_date_column(frame)
+    if column is None: return frame
+    dates = parsed_dates(frame[column])
+    return frame[dates.isna() | dates.le(cutoff)]
+
+
+def entity_table(frames: dict[str, pd.DataFrame], config: dict[str, Any], cutoff: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Uma linha por entidade. Com `cutoff`, as métricas enxergam apenas o que
+    existia até aquela data — o desfecho continua vindo da fonte inteira."""
     objective = config["objective"]
     base_sheet, entity_col = objective["entitySheet"], objective["entityColumn"]
+    target_sheet, target_column = objective.get("targetSheet"), objective.get("targetColumn")
+    timeline = entity_timeline(config, frames)
+    if cutoff is not None:
+        frames = {name: frame if name == target_sheet else rows_before(frame, cutoff) for name, frame in frames.items()}
     base = pd.DataFrame({"__entity": frames[base_sheet][entity_col].dropna().astype(str).unique()})
     for metric in config["metrics"]:
         if not metric.get("included"): continue
         frame = frames[metric["sheet"]]
-        key = entity_col if entity_col in frame.columns else None
-        if key is None:
-            rel = next((r for r in config.get("relationships", []) if r["leftSheet"] == metric["sheet"] and r["rightSheet"] == base_sheet), None)
-            key = rel["leftColumn"] if rel else None
-        if key is None:
-            rel = next((r for r in config.get("relationships", []) if r["rightSheet"] == metric["sheet"] and r["leftSheet"] == base_sheet), None)
-            key = rel["rightColumn"] if rel else None
-        if key is None or metric["column"] not in frame.columns: continue
+        key = entity_key(config, frames, metric["sheet"])
+        if key is None or metric["column"] not in frame.columns or frame.empty: continue
         grouped = frame.assign(__entity=frame[key].astype(str)).groupby("__entity", dropna=False)[metric["column"]].apply(lambda s: aggregate(s, metric["aggregation"])).rename(metric["id"])
         base = base.merge(grouped, how="left", left_on="__entity", right_index=True)
     context_columns = [c for c in frames[base_sheet].columns if semantic_role(c, physical_type(frames[base_sheet][c]), frames[base_sheet][c].nunique() / max(frames[base_sheet][c].notna().sum(), 1))[0] in ("CONTEXT", "OWNER", "BUSINESS_VALUE")]
     if context_columns:
         context = frames[base_sheet].assign(__entity=frames[base_sheet][entity_col].astype(str)).groupby("__entity")[context_columns].first()
         base = base.merge(context, how="left", left_on="__entity", right_index=True)
-    target_sheet, target_column = objective.get("targetSheet"), objective.get("targetColumn")
     if target_sheet in frames and target_column in frames[target_sheet].columns:
         target_frame = frames[target_sheet]
-        target_key = entity_col if entity_col in target_frame.columns else next((r["leftColumn"] for r in config.get("relationships", []) if r["leftSheet"] == target_sheet and r["rightSheet"] == base_sheet), None)
-        if target_key is None:
-            target_key = next((r["rightColumn"] for r in config.get("relationships", []) if r["rightSheet"] == target_sheet and r["leftSheet"] == base_sheet), None)
+        target_key = entity_key(config, frames, target_sheet)
         if target_key:
             targets = target_frame.assign(__entity=target_frame[target_key].astype(str)).groupby("__entity")[target_column].last().rename("__target")
             base = base.merge(targets, how="left", left_on="__entity", right_index=True)
-    time_candidates = [(sheet, column) for sheet, frame in frames.items() for column in frame.columns if physical_type(frame[column]) == "date"]
-    for time_sheet, time_column in time_candidates:
-        frame = frames[time_sheet]
-        time_key = entity_col if entity_col in frame.columns else next((r["leftColumn"] for r in config.get("relationships", []) if r["leftSheet"] == time_sheet and r["rightSheet"] == base_sheet), None)
-        if time_key is None:
-            time_key = next((r["rightColumn"] for r in config.get("relationships", []) if r["rightSheet"] == time_sheet and r["leftSheet"] == base_sheet), None)
-        if time_key:
-            times = frame.assign(__entity=frame[time_key].astype(str), __parsed_time=pd.to_datetime(frame[time_column], errors="coerce", dayfirst=True)).groupby("__entity")["__parsed_time"].max().rename("__time")
-            base = base.merge(times, how="left", left_on="__entity", right_index=True)
-            break
-    return base
+        target_date = sheet_date_column(target_frame)
+        if target_key and target_date:
+            events = target_frame.assign(__entity=target_frame[target_key].astype(str), __parsed=parsed_dates(target_frame[target_date])).groupby("__entity")["__parsed"].max().rename("__event")
+            base = base.merge(events, how="left", left_on="__entity", right_index=True)
+    return base.merge(timeline, how="left", left_on="__entity", right_index=True)
 
 
-def risk_values(series: pd.Series, risk_type: str) -> tuple[pd.Series, str]:
+def risk_values(series: pd.Series, risk_type: str, reference: pd.Series | None = None) -> tuple[pd.Series, str]:
+    """`reference` fixa a escala numa fonte externa — é o que mantém a mesma régua
+    quando a mesma métrica é medida em vários cortes de observação."""
     numeric = pd.to_numeric(series, errors="coerce")
     if numeric.notna().sum() >= max(2, len(series) * .3):
-        low, high = numeric.quantile(.05), numeric.quantile(.95)
+        scale_source = pd.to_numeric(reference, errors="coerce") if reference is not None else numeric
+        low, high = scale_source.quantile(.05), scale_source.quantile(.95)
+        if pd.isna(low) or pd.isna(high): low, high = numeric.quantile(.05), numeric.quantile(.95)
         scaled = ((numeric - low) / max(float(high - low), 1e-9)).clip(0, 1)
         if risk_type == "LOW_IS_RISK": scaled = 1 - scaled
         return scaled, f"faixa observada {clean(low)}–{clean(high)}"
@@ -359,10 +419,13 @@ def run_score(profile: dict[str, Any], frames: dict[str, pd.DataFrame], config: 
             contribution = raw_risk * weights[metric["id"]] / max(observed_weight, 1e-9)
             factors.append({"metricId": metric["id"], "label": metric["meaning"], "observedValue": clean(row.get(metric["id"])), "reference": reference_by_metric[metric["id"]], "contribution": round(contribution, 4), "direction": "increases_risk" if raw_risk >= .5 else "reduces_risk", "origin": metric["sheet"], "observed": True})
         factors.sort(key=lambda item: item["contribution"], reverse=True)
-        context = {str(k): clean(v) for k, v in row.items() if k not in {"__entity", *[m["id"] for m in metrics]} and pd.notna(v)}
+        context = {str(k): clean(v) for k, v in row.items() if not str(k).startswith("__") and k not in {m["id"] for m in metrics} and pd.notna(v)}
         business_value = next((float(v) for k, v in context.items() if any(h in norm(k) for h in VALUE_HINTS) and isinstance(v, (int, float))), None)
         estimate_kind = "score"
-        entities.append({"id": str(row["__entity"]), "displayName": str(row["__entity"]), "estimate": round(float(estimate), 4), "estimateKind": estimate_kind, "band": band(estimate, coverage, config["minimumCoverage"]), "coverage": round(coverage, 4), "businessValue": business_value, "expectedImpact": round(business_value * estimate, 2) if business_value is not None else None, "segment": next((str(v) for k, v in context.items() if any(h in norm(k) for h in SEGMENT_HINTS)), None), "owner": next((str(v) for k, v in context.items() if any(h in norm(k) for h in OWNER_HINTS)), None), "factors": factors[:8], "missingData": [m["meaning"] for m in metrics if m not in present], "context": context, "recommendations": recommendations(factors)})
+        entities.append({"id": str(row["__entity"]), "displayName": str(row["__entity"]), "estimate": round(float(estimate), 4), "estimateKind": estimate_kind, "band": band(estimate, coverage, config["minimumCoverage"]), "coverage": round(coverage, 4), "businessValue": business_value, "expectedImpact": round(business_value * estimate, 2) if business_value is not None else None, "segment": next((str(v) for k, v in context.items() if any(h in norm(k) for h in SEGMENT_HINTS)), None), "owner": next((str(v) for k, v in context.items() if any(h in norm(k) for h in OWNER_HINTS)), None), "factors": factors, "missingData": [m["meaning"] for m in metrics if m not in present], "context": context, "recommendations": recommendations(factors)})
+    # O score é posição relativa, não nível absoluto: o percentil diz isso sem rodeios.
+    for entity, percentile in zip(entities, pd.Series([e["estimate"] for e in entities]).rank(pct=True)):
+        entity["percentile"] = round(float(percentile), 4)
     entities.sort(key=lambda item: (item.get("expectedImpact") or item["estimate"], item["estimate"]), reverse=True)
     return build_result(profile, config, entities, "weighted_score", "Score de Risco", "Não há desfecho histórico validado em volume e qualidade suficientes para exibir probabilidade.")
 
@@ -371,6 +434,33 @@ def binary_target(series: pd.Series, positive_values: list[str]) -> pd.Series:
     positives = {norm(value) for value in positive_values}
     normalized = series.map(norm)
     return normalized.map(lambda value: 1 if value in positives or any(token in value for token in ("cancel", "inativ", "inadimpl", "nao_renov", "não_renov")) else 0)
+
+
+def observation_window(profile: dict[str, Any], horizon: pd.Timedelta) -> tuple[pd.Timestamp, pd.Timestamp] | None:
+    if "observedFrom" not in profile or "observedUntil" not in profile: return None
+    start, end = pd.Timestamp(profile["observedFrom"]), pd.Timestamp(profile["observedUntil"])
+    if pd.isna(start) or pd.isna(end) or end - start <= horizon * 3: return None
+    return start, end
+
+
+def as_of_sample(frames: dict[str, pd.DataFrame], config: dict[str, Any], cutoff: pd.Timestamp, horizon: pd.Timedelta,
+                 metrics: list[dict[str, Any]], references: dict[str, pd.Series], positives: list[str]):
+    """Uma foto da carteira na data `cutoff`: X só com o que era visível até ali,
+    y = o desfecho aconteceu dentro do horizonte seguinte.
+
+    Quem já tinha o desfecho antes do corte sai da amostra — não estava mais em risco.
+    """
+    table = entity_table(frames, config, cutoff=cutoff)
+    if "__last" not in table or "__target" not in table: return None
+    event = table["__event"] if "__event" in table else table["__last"]
+    target = binary_target(table["__target"].fillna(""), positives)
+    at_risk = table["__last"].notna() & table["__last"].gt(cutoff)
+    already_happened = target.eq(1) & event.notna() & event.le(cutoff)
+    keep = (at_risk & ~already_happened).to_numpy()
+    label = (target.eq(1) & event.notna() & event.gt(cutoff) & event.le(cutoff + horizon)).astype(int)
+    if not keep.any(): return None
+    x = pd.concat([risk_values(table[m["id"]], m["riskType"], references[m["id"]])[0].rename(m["id"]) for m in metrics], axis=1)
+    return x[keep].reset_index(drop=True), label[keep].reset_index(drop=True), table.loc[keep, "__entity"].reset_index(drop=True)
 
 
 def try_probability(profile: dict[str, Any], frames: dict[str, pd.DataFrame], config: dict[str, Any]) -> dict[str, Any] | None:
@@ -397,29 +487,41 @@ def try_probability(profile: dict[str, Any], frames: dict[str, pd.DataFrame], co
     if not metrics:
         fallback("nenhuma métrica preditora foi confirmada.")
         return None
-    labeled = table[table["__target"].notna() & table["__time"].notna()].copy().sort_values("__time")
-    y = binary_target(labeled["__target"], config["objective"].get("positiveValues") or [])
-    if y.sum() < 20 or (len(y) - y.sum()) < 20:
-        fallback(f"foram encontrados {int(y.sum())} eventos positivos e {int(len(y) - y.sum())} negativos; o mínimo é 20 de cada.")
+    horizon = pd.Timedelta(days=int(config["objective"].get("horizonDays") or 90))
+    window = observation_window(profile, horizon)
+    if window is None:
+        fallback("o período observado é curto demais para separar passado e desfecho.")
         return None
-    risk_columns = []
-    references = {}
-    for metric in metrics:
-        values, reference = risk_values(table[metric["id"]], metric["riskType"])
-        risk_columns.append(values.rename(metric["id"]))
-        references[metric["id"]] = reference
-    risk_frame = pd.concat(risk_columns, axis=1)
-    x = risk_frame.loc[labeled.index]
-    train_end, validation_end = int(len(labeled) * .6), int(len(labeled) * .8)
-    if train_end < 30 or validation_end <= train_end:
-        fallback("o recorte temporal não deixou exemplos suficientes para treino e validação.")
+    start, end = window
+    positives = config["objective"].get("positiveValues") or []
+    references = {metric["id"]: table[metric["id"]] for metric in metrics}
+
+    # Cada corte é uma foto: métricas com o que existia até ali, desfecho no horizonte
+    # seguinte. As fotos de treino fecham antes do corte de teste, então nenhum evento
+    # aparece dos dois lados.
+    test_cutoff = end - horizon
+    cutoffs = [start + (test_cutoff - horizon - start) * fraction for fraction in np.linspace(.25, 1.0, 6)]
+    samples = [as_of_sample(frames, config, cutoff, horizon, metrics, references, positives) for cutoff in cutoffs]
+    samples = [sample for sample in samples if sample is not None and sample[1].sum() > 0]
+    test_sample = as_of_sample(frames, config, test_cutoff, horizon, metrics, references, positives)
+    if len(samples) < 3 or test_sample is None:
+        fallback("os cortes de observação não produziram amostras suficientes.")
         return None
-    x_train, y_train = x.iloc[:train_end], y.iloc[:train_end]
-    x_validation, y_validation = x.iloc[train_end:validation_end], y.iloc[train_end:validation_end]
-    x_test, y_test = x.iloc[validation_end:], y.iloc[validation_end:]
+
+    split = max(1, int(len(samples) * .7))
+    x_train = pd.concat([sample[0] for sample in samples[:split]], ignore_index=True)
+    y_train = pd.concat([sample[1] for sample in samples[:split]], ignore_index=True)
+    x_validation = pd.concat([sample[0] for sample in samples[split:]], ignore_index=True)
+    y_validation = pd.concat([sample[1] for sample in samples[split:]], ignore_index=True)
+    x_test, y_test = test_sample[0], test_sample[1]
+    observed_events = pd.concat([sample[2][sample[1].eq(1).to_numpy()] for sample in samples]).nunique()
+    if observed_events < 20:
+        fallback(f"foram observadas {int(observed_events)} entidades com o desfecho nos cortes; o mínimo é 20.")
+        return None
     if any(part.nunique() < 2 or min(part.value_counts()) < 5 for part in (y_validation, y_test)):
         fallback("a validação ou o teste temporal não possui cinco exemplos de cada classe.")
         return None
+    risk_frame = pd.concat([risk_values(table[metric["id"]], metric["riskType"], references[metric["id"]])[0].rename(metric["id"]) for metric in metrics], axis=1)
     candidates = []
     for regularization in (.05, .2, 1.0, 5.0):
         model = make_pipeline(SimpleImputer(strategy="median", add_indicator=True), StandardScaler(), LogisticRegression(C=regularization, max_iter=2000, class_weight="balanced"))
@@ -469,7 +571,7 @@ def build_result(profile: dict[str, Any], config: dict[str, Any], entities: list
     distribution = {key: sum(e["band"] == key for e in entities) for key in ("LOW", "ATTENTION", "HIGH", "CRITICAL", "INSUFFICIENT")}
     low_coverage = distribution["INSUFFICIENT"] > 0
     limitations = list(profile["warnings"])
-    if method == "weighted_score": limitations.append("Score relativo à fonte e aos pesos confirmados; não representa probabilidade estatística.")
+    if method == "weighted_score": limitations.append("Score relativo: compara cada métrica com a faixa observada neste próprio arquivo e posiciona as entidades entre si. Não é probabilidade e não mede saúde absoluta — uma carteira inteiramente saudável e uma inteiramente crítica produzem escalas parecidas, então as bandas indicam posição na fila, não gravidade.")
     if not profile["capabilities"]["businessValue"]: limitations.append("A fonte não contém valor financeiro; impacto monetário não é exibido.")
     return {"schemaVersion": "2.0", "runId": str(uuid.uuid4()), "generatedAt": datetime.now(timezone.utc).isoformat(), "source": {"fileName": profile["fileName"], "rows": profile["totalRows"]}, "config": config, "profile": profile, "method": {"selected": method, "label": label, "reason": reason}, "summary": {"analyzedEntities": len(entities), "attentionEntities": sum(e["band"] in ("ATTENTION", "HIGH", "CRITICAL") for e in entities), "highEntities": sum(e["band"] in ("HIGH", "CRITICAL") for e in entities), "averageEstimate": round(float(np.mean(estimates)) if estimates else 0, 4), "averageCoverage": round(float(np.mean([e["coverage"] for e in entities])) if entities else 0, 4), "totalBusinessValue": round(sum(values), 2) if values else None, "expectedImpact": round(sum(impacts), 2) if impacts else None, "distribution": distribution}, "entities": entities, "modules": module_catalog(profile, method, low_coverage), "limitations": limitations}
 

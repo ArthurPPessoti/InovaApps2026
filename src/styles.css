@@ -3480,6 +3480,18 @@ input:hover {
   margin-top: 18px;
 }
 
+.lifecycle-list-panel .table-scroll {
+  max-height: clamp(320px, calc(100dvh - 120px), 720px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.lifecycle-list-panel .clients-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .lifecycle-table {
   min-width: 880px;
 }
@@ -6504,6 +6516,11 @@ body:has(dialog[open]) {
 .connected-predictive .risk-value-panel { min-width: 0; }
 .connected-predictive--details { margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.1); }
 .connected-predictive--details .panel--wide { grid-column: 1 / -1; }
+.scenario-chart-card { display: grid; padding-bottom: 20px; grid-template-rows: auto 1fr; }
+.scenario-chart-card .panel-heading { min-height: 86px; }
+.scenario-chart-card .predictive-chart { height: 320px; margin-top: 12px; }
+.scenario-chart-card .predictive-chart--drivers { height: 334px; }
+.scenario-chart-card .predictive-chart--deterioration { height: 350px; }
 .scenario-links { display: flex; flex-wrap: wrap; gap: 10px; }
 .management-page > .management-page { padding: 0; }
 .management-page > .management-page + .page-heading { margin-top: 10px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,.1); }
@@ -7847,4 +7864,75 @@ input[type="checkbox"] {
   .forecast-simulator > span {
     text-align: left;
   }
+}
+
+/* Evidência do método: decomposição, grupos, cobertura e qualidade. */
+.evidence-chart { height: 260px; min-width: 0; margin-top: 14px; }
+.evidence-chart--tall { height: 320px; }
+.evidence-chart--short { height: 120px; }
+
+.evidence-stats {
+  display: grid;
+  margin: 14px 0 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.evidence-stats div {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.evidence-stats dt { color: var(--text-secondary); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; }
+.evidence-stats dd { margin: 4px 0 0; color: #ffffff; font: 650 15px "Space Grotesk", sans-serif; }
+
+.direction-pills {
+  display: grid;
+  margin-top: 8px;
+  grid-template-columns: repeat(3, minmax(88px, 1fr));
+  gap: 6px;
+}
+
+.direction-pills button {
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.025);
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+  transition: 180ms ease;
+}
+
+.direction-pills button:hover,
+.direction-pills button:focus-visible { border-color: rgba(0, 243, 255, 0.38); color: #ffffff; outline: none; }
+.direction-pills button:focus-visible { box-shadow: 0 0 0 3px rgba(0, 243, 255, 0.1); }
+.direction-pills button.is-selected { border-color: rgba(0, 243, 255, 0.55); color: #04121a; background: var(--cyan-400); font-weight: 650; }
+
+.guided-weight-row.needs-direction { border-left: 2px solid var(--amber-400, #ffba49); padding-left: 10px; }
+.guided-weight-name em { color: var(--amber-400, #ffba49); font-size: 9px; font-style: normal; }
+
+.direction-notice {
+  display: flex;
+  margin-top: 12px;
+  padding: 10px 12px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 186, 73, 0.32);
+  border-radius: 12px;
+  color: #ffd79a;
+  background: rgba(255, 186, 73, 0.07);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .guided-weight-row { grid-template-columns: minmax(0, 1fr); }
+  .direction-pills { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .evidence-chart { height: 240px; }
+  .evidence-chart--tall { height: 300px; }
 }
