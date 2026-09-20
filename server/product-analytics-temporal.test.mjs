@@ -180,6 +180,43 @@ test("série histórica retorna doze meses e preenche meses sem evento", () => {
   database.close();
 });
 
+test("série por funcionalidade acompanha o período mensal com pontos diários", () => {
+  const database = createDatabase();
+  insertEvent(database, { id: "report_one", receivedAt: "2026-09-10T12:00:00.000Z" });
+  insertEvent(database, { id: "report_two", receivedAt: "2026-09-11T12:00:00.000Z" });
+  insertEvent(database, { id: "stock", eventName: "estoque_consultado", receivedAt: "2026-09-12T12:00:00.000Z" });
+  insertEvent(database, { id: "technical", eventName: "tracker_test_event", receivedAt: "2026-09-13T12:00:00.000Z" });
+  const history = getTemporalProductAnalytics(database, "product_a", "monthly", NOW).featureHistory;
+  assert.equal(history.granularity, "daily");
+  assert.equal(history.points.length, 19);
+  assert.deepEqual(history.points.find((item) => item.start === "2026-09-10T03:00:00.000Z").eventCounts, { relatorio_gerado: 1 });
+  assert.deepEqual(history.points.find((item) => item.start === "2026-09-12T03:00:00.000Z").eventCounts, { estoque_consultado: 1 });
+  assert.deepEqual(history.points[0].eventCounts, {});
+  database.close();
+});
+
+for (const [period, granularity, pointCount] of [
+  ["monthly", "daily", 19],
+  ["quarterly", "weekly", 12],
+  ["semiannual", "monthly", 6],
+  ["annual", "monthly", 12],
+]) {
+  test(`série do gráfico usa granularidade ${granularity} no período ${period}`, () => {
+    const database = createDatabase();
+    insertEvent(database, { id: `${period}_report`, receivedAt: "2026-09-10T12:00:00.000Z" });
+    insertEvent(database, { id: `${period}_stock`, eventName: "estoque_consultado", receivedAt: "2026-09-11T12:00:00.000Z" });
+    const result = getTemporalProductAnalytics(database, "product_a", period, NOW);
+    assert.equal(result.featureHistory.granularity, granularity);
+    assert.equal(result.featureHistory.points.length, pointCount);
+    assert.equal(result.featureHistory.points[0].start, result.period.current.start);
+    const chartTotal = result.featureHistory.points.reduce((total, point) => (
+      total + Object.values(point.eventCounts).reduce((sum, count) => sum + count, 0)
+    ), 0);
+    assert.equal(chartTotal, result.summary.events.current);
+    database.close();
+  });
+}
+
 test("calcula quedas consecutivas usando meses completos", () => {
   const database = createDatabase();
   [["2026-06", 5], ["2026-07", 4], ["2026-08", 3]].forEach(([month, count]) => {
@@ -223,6 +260,7 @@ test("mantém eventos técnicos armazenados, mas fora de todas as análises de p
   assert.equal(result.summary.frequencyPerUser.current, 0);
   assert.deepEqual(result.features, []);
   assert.ok(result.history.every((month) => month.events === 0 && month.uniqueUsers === 0));
+  assert.ok(result.featureHistory.points.every((point) => Object.keys(point.eventCounts).length === 0));
   database.close();
 });
 

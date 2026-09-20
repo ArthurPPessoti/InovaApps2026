@@ -4,6 +4,7 @@ import {
   ArrowRight,
   ArrowUp,
   ChartLineUp,
+  CheckCircle,
   ClockCounterClockwise,
   Pulse,
   SpinnerGap,
@@ -11,7 +12,7 @@ import {
   UsersThree,
   WarningCircle,
 } from "@phosphor-icons/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   CartesianGrid,
@@ -24,6 +25,14 @@ import {
 } from "recharts";
 import { usePortfolio } from "../features/portfolio/PortfolioContext";
 import { getTemporalProductAnalytics } from "../features/product-analytics/productAnalyticsApi";
+import {
+  ALL_FEATURES,
+  buildFeatureChart,
+  buildPeriodHighlights,
+  getFeatureFilterMode,
+  normalizeFeatureSelection,
+  type PeriodHighlight,
+} from "../features/product-analytics/temporalPresentation";
 import type {
   AnalysisAvailabilityStatus,
   MetricComparison,
@@ -39,15 +48,20 @@ const periodOptions: Array<{ value: TemporalAnalyticsPeriod; label: string }> = 
   { value: "annual", label: "Anual" },
 ];
 
+const featureLineColors = ["#00f3ff", "#4779ff", "#24ff9a", "#ffba49", "#b779ff", "#ff6b78", "#43b9ff", "#d4ff5f"];
+
 function formatNumber(value: number, maximumFractionDigits = 2) {
   return value.toLocaleString("pt-BR", { maximumFractionDigits });
 }
 
-function formatMonth(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  return new Intl.DateTimeFormat("pt-BR", { month: "short", year: "2-digit" })
-    .format(new Date(year, monthNumber - 1, 1))
-    .replace(" de ", "/");
+function formatHistoryPoint(value: string, granularity: "daily" | "weekly" | "monthly") {
+  const options: Intl.DateTimeFormatOptions = granularity === "monthly"
+    ? { month: "short", year: "2-digit", timeZone: "America/Sao_Paulo" }
+    : { day: "2-digit", month: "short", timeZone: "America/Sao_Paulo" };
+  return new Intl.DateTimeFormat("pt-BR", options)
+    .format(new Date(value))
+    .replace(" de ", "/")
+    .replace(".", "");
 }
 
 function formatDateTime(value: string | null) {
@@ -73,9 +87,23 @@ const availabilityCopy: Record<Exclude<AnalysisAvailabilityStatus, "ready">, { t
     description: "As funcionalidades estão configuradas. Agora aguardamos o primeiro evento correspondente a uma delas.",
   },
   insufficient_history: {
-    title: "Histórico em formação",
-    description: "Já recebemos eventos válidos, mas ainda não existe uma base anterior equivalente para calcular comparações e tendências.",
+    title: "Primeiro período de coleta",
+    description: "A telemetria está funcionando e os eventos já estão sendo armazenados. A análise comparativa ainda não aparece porque este produto não possui um período anterior equivalente.",
   },
+};
+
+const comparisonReadinessCopy: Record<TemporalAnalyticsPeriod, string> = {
+  monthly: "A visão mensal será liberada após a virada para um novo mês, desde que o mês anterior tenha eventos monitorados.",
+  quarterly: "A visão trimestral será liberada quando existir uma janela anterior equivalente de três meses com eventos monitorados.",
+  semiannual: "A visão semestral será liberada quando existir uma janela anterior equivalente de seis meses com eventos monitorados.",
+  annual: "A visão anual será liberada quando existir uma janela anterior equivalente de 12 meses com eventos monitorados.",
+};
+
+const chartPeriodCopy: Record<TemporalAnalyticsPeriod, string> = {
+  monthly: "Mês atual · séries diárias por funcionalidade",
+  quarterly: "Janela trimestral atual · séries semanais por funcionalidade",
+  semiannual: "Janela semestral atual · séries mensais por funcionalidade",
+  annual: "Últimos 12 meses · séries mensais por funcionalidade",
 };
 
 function VariationText({ metric }: { metric: MetricComparison }) {
@@ -141,7 +169,82 @@ function AnalysisAvailability({ analytics }: { analytics: TemporalProductAnalyti
         <div><dt>Primeiro evento válido</dt><dd>{formatDateTime(availability.firstProductEventAt)}</dd></div>
         <div><dt>Último evento válido</dt><dd>{formatDateTime(availability.lastProductEventAt)}</dd></div>
       </dl>
+      {availability.status === "insufficient_history" && (
+        <div className="temporal-history-explainer">
+          <div className="temporal-history-explainer-copy">
+            <small>Por que os cards e gráficos ainda não aparecem?</small>
+            <strong>Este é um estado esperado, não um erro da integração.</strong>
+            <p>Cards, destaques, gráfico e tabela dependem da comparação entre dois períodos equivalentes. Enquanto existe somente o primeiro período, esses elementos ficam ocultos para não apresentar percentuais ou tendências sem uma base confiável.</p>
+            <p>{comparisonReadinessCopy[analytics.period.key]}</p>
+          </div>
+          <div className="temporal-history-progress" aria-label="Progresso da preparação da análise">
+            <span className="complete"><CheckCircle size={17} weight="fill" /> Coleta de eventos ativa</span>
+            <span><ClockCounterClockwise size={17} /> Formando período de comparação</span>
+          </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+function PeriodHighlights({ highlights }: { highlights: PeriodHighlight[] }) {
+  if (highlights.length === 0) return null;
+  return (
+    <section className="temporal-highlights" aria-labelledby="temporal-highlights-title">
+      <div className="temporal-section-heading">
+        <span>Leitura descritiva dos eventos monitorados</span>
+        <h2 id="temporal-highlights-title">Destaques do período</h2>
+      </div>
+      <div className="temporal-highlight-list">
+        {highlights.map((highlight) => (
+          <article className={`temporal-highlight temporal-highlight--${highlight.kind}`} key={highlight.eventName}>
+            <span className="temporal-highlight-icon" aria-hidden="true">
+              {highlight.kind === "decline" ? <ArrowDown size={18} /> : highlight.kind === "growth" ? <ArrowUp size={18} /> : <ArrowRight size={18} />}
+            </span>
+            <p>{highlight.text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeatureChartFilter({
+  features,
+  selectedFeature,
+  onChange,
+}: {
+  features: TemporalProductAnalytics["features"];
+  selectedFeature: string;
+  onChange: (eventName: string) => void;
+}) {
+  if (getFeatureFilterMode(features.length) === "select") {
+    return (
+      <label className="temporal-feature-select">
+        <span>Funcionalidade exibida</span>
+        <select value={selectedFeature} onChange={(event) => onChange(event.target.value)}>
+          <option value={ALL_FEATURES}>Todas</option>
+          {features.map((feature) => <option key={feature.eventName} value={feature.eventName}>{feature.name}</option>)}
+        </select>
+      </label>
+    );
+  }
+
+  return (
+    <div className="temporal-feature-filter" role="group" aria-label="Filtrar gráfico por funcionalidade">
+      <button type="button" aria-pressed={selectedFeature === ALL_FEATURES} className={selectedFeature === ALL_FEATURES ? "active" : ""} onClick={() => onChange(ALL_FEATURES)}>Todas</button>
+      {features.map((feature) => (
+        <button
+          key={feature.eventName}
+          type="button"
+          aria-pressed={selectedFeature === feature.eventName}
+          className={selectedFeature === feature.eventName ? "active" : ""}
+          onClick={() => onChange(feature.eventName)}
+        >
+          {feature.name}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -153,6 +256,7 @@ export function ProductTemporalAnalyticsPage() {
   const [analytics, setAnalytics] = useState<TemporalProductAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedFeature, setSelectedFeature] = useState(ALL_FEATURES);
 
   useEffect(() => {
     let active = true;
@@ -169,6 +273,26 @@ export function ProductTemporalAnalyticsPage() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [clienteId, period]);
+
+  useEffect(() => {
+    setSelectedFeature(ALL_FEATURES);
+  }, [clienteId]);
+
+  useEffect(() => {
+    if (!analytics) return;
+    setSelectedFeature((current) => normalizeFeatureSelection(current, analytics.features));
+  }, [analytics]);
+
+  const highlights = useMemo(() => (
+    analytics
+      ? buildPeriodHighlights(analytics.features, analytics.analysisAvailability.status)
+      : []
+  ), [analytics]);
+  const featureChart = useMemo(() => (
+    analytics
+      ? buildFeatureChart(analytics.featureHistory, analytics.features, selectedFeature)
+      : { selection: ALL_FEATURES, features: [], granularity: "monthly" as const, data: [] }
+  ), [analytics, selectedFeature]);
 
   if (portfolioLoading && !product) {
     return <div className="temporal-analytics-state"><SpinnerGap size={26} /> Carregando produto...</div>;
@@ -239,20 +363,37 @@ export function ProductTemporalAnalyticsPage() {
                 <ComparisonCard icon={<ChartLineUp size={22} />} label="Frequência média por usuário" metric={analytics.summary.frequencyPerUser} decimal />
               </section>
 
+              <PeriodHighlights highlights={highlights} />
+
               <section className="product-analytics-panel temporal-history-panel">
                 <div className="product-analytics-panel-heading">
-                  <div><span>Últimos 12 meses · funcionalidades monitoradas</span><h2>Evolução da utilização</h2></div>
+                  <div><span>{chartPeriodCopy[analytics.period.key]}</span><h2>Evolução da utilização</h2></div>
                   <small>{analytics.dataOrigins.demoEvents} demo · {analytics.dataOrigins.realEvents} real</small>
                 </div>
-                <div className="temporal-history-chart" aria-label="Eventos monitorados e usuários únicos por mês">
+                <FeatureChartFilter
+                  features={analytics.features}
+                  selectedFeature={featureChart.selection}
+                  onChange={setSelectedFeature}
+                />
+                <div className="temporal-history-chart" aria-label="Eventos mensais por funcionalidade monitorada">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={analytics.history} margin={{ top: 20, right: 12, left: -10, bottom: 0 }}>
+                    <LineChart data={featureChart.data} margin={{ top: 20, right: 12, left: -10, bottom: 0 }}>
                       <CartesianGrid stroke="rgba(255,255,255,.07)" vertical={false} />
-                      <XAxis dataKey="month" tickFormatter={formatMonth} axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 10 }} />
+                      <XAxis dataKey="start" tickFormatter={(value) => formatHistoryPoint(String(value), featureChart.granularity)} axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 10 }} minTickGap={24} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 10 }} />
-                      <Tooltip labelFormatter={(label) => formatMonth(String(label))} />
-                      <Line isAnimationActive={false} type="monotone" dataKey="events" name="Eventos" stroke="#00f3ff" strokeWidth={3} dot={false} />
-                      <Line isAnimationActive={false} type="monotone" dataKey="uniqueUsers" name="Usuários únicos" stroke="#4779ff" strokeWidth={2.5} dot={false} />
+                      <Tooltip labelFormatter={(label) => formatHistoryPoint(String(label), featureChart.granularity)} />
+                      {featureChart.features.map((feature, index) => (
+                        <Line
+                          key={feature.eventName}
+                          isAnimationActive={false}
+                          type="monotone"
+                          dataKey={(point: { values: Record<string, number> }) => point.values[feature.eventName] ?? 0}
+                          name={feature.name}
+                          stroke={featureLineColors[index % featureLineColors.length]}
+                          strokeWidth={featureChart.features.length === 1 ? 3 : 2.5}
+                          dot={false}
+                        />
+                      ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

@@ -110,4 +110,11 @@ export interface TemporalProductAnalytics {
     events: number;
     uniqueUsers: number;
   }>;
+  featureHistory: {
+    granularity: "daily" | "weekly" | "monthly";
+    points: Array<{
+      start: string;
+      eventCounts: Record<string, number>;
+    }>;
+  };
 }

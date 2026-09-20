@@ -302,6 +302,87 @@ function getMonthlyHistory(database, clientId, now) {
   });
 }
 
+function shiftZonedDays(date, dayOffset) {
+  const parts = getZonedParts(date);
+  const targetDay = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + dayOffset));
+  return zonedDateTimeToUtc({
+    year: targetDay.getUTCFullYear(),
+    month: targetDay.getUTCMonth() + 1,
+    day: targetDay.getUTCDate(),
+    hour: parts.hour,
+    minute: parts.minute,
+    second: parts.second,
+    millisecond: date.getUTCMilliseconds(),
+  });
+}
+
+function getPeriodFeatureHistory(database, clientId, windows) {
+  const granularity = windows.key === "monthly"
+    ? "daily"
+    : windows.key === "quarterly" ? "weekly" : "monthly";
+  const periodStart = new Date(windows.current.start);
+  const periodEnd = new Date(windows.current.end);
+  const buckets = [];
+  for (let index = 0; index < 400; index += 1) {
+    const start = granularity === "daily"
+      ? shiftZonedDays(periodStart, index)
+      : granularity === "weekly"
+        ? shiftZonedDays(periodStart, index * 7)
+        : shiftZonedMonths(periodStart, index);
+    if (start >= periodEnd) break;
+    const candidateEnd = granularity === "daily"
+      ? shiftZonedDays(periodStart, index + 1)
+      : granularity === "weekly"
+        ? shiftZonedDays(periodStart, (index + 1) * 7)
+        : shiftZonedMonths(periodStart, index + 1);
+    buckets.push({
+      start,
+      end: candidateEnd < periodEnd ? candidateEnd : periodEnd,
+    });
+  }
+
+  if (buckets.length === 0) return { granularity, points: [] };
+  const bucketValues = buckets.map(() => "(?, ?, ?)").join(", ");
+  const parameters = buckets.flatMap((bucket, index) => [
+    index,
+    bucket.start.toISOString(),
+    bucket.end.toISOString(),
+  ]);
+  parameters.push(clientId);
+  const rows = database.prepare(`
+    WITH buckets(bucketIndex, startAt, endAt) AS (
+      VALUES ${bucketValues}
+    )
+    SELECT
+      buckets.bucketIndex AS bucketIndex,
+      e.event_name AS eventName,
+      COUNT(*) AS events
+    FROM buckets
+    INNER JOIN connection_events e
+      ON e.received_at >= buckets.startAt
+      AND e.received_at < buckets.endAt
+    INNER JOIN connection_applications a ON a.id = e.application_id
+    INNER JOIN connection_features f
+      ON f.application_id = e.application_id
+      AND f.event_name = e.event_name
+    WHERE a.client_id = ?
+    GROUP BY buckets.bucketIndex, e.event_name
+    ORDER BY buckets.bucketIndex ASC, e.event_name ASC
+  `).all(...parameters);
+  const countsByBucket = new Map();
+  rows.forEach((row) => {
+    if (!countsByBucket.has(row.bucketIndex)) countsByBucket.set(row.bucketIndex, {});
+    countsByBucket.get(row.bucketIndex)[row.eventName] = Number(row.events);
+  });
+  return {
+    granularity,
+    points: buckets.map((bucket, index) => ({
+      start: bucket.start.toISOString(),
+      eventCounts: countsByBucket.get(index) ?? {},
+    })),
+  };
+}
+
 function getConsecutiveDeclines(database, clientId, now) {
   const completedEnd = startOfZonedMonth(now);
   const historyStart = startOfZonedMonth(completedEnd, -13);
@@ -496,5 +577,6 @@ export function getTemporalProductAnalytics(database, clientId, period, now = ne
     },
     features,
     history: getMonthlyHistory(database, clientId, now),
+    featureHistory: getPeriodFeatureHistory(database, clientId, windows),
   };
 }
