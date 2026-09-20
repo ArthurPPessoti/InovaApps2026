@@ -22,6 +22,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useAuth } from "../auth/AuthContext";
 import { RiskBadge, Variation, formatCurrency } from "../components/StatusUI";
 import { getCompany, products, watchProducts } from "../data/mockData";
 import { ClientRecentEvents } from "../features/client-telemetry/ClientRecentEvents";
@@ -41,7 +42,9 @@ function DetailTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function ClientDetailPage() {
   const { clienteId } = useParams();
   const location = useLocation();
+  const { account } = useAuth();
   const { getProduct, loading } = usePortfolio();
+  const hasTechnology = account?.profile === "technology";
   const client = [...products, ...watchProducts].find((item) => item.id === clienteId);
   const persistedClient = clienteId ? getProduct(clienteId) : undefined;
   const backTarget = (location.state as { from?: string } | null)?.from ?? "/#clientes";
@@ -50,7 +53,7 @@ export function ClientDetailPage() {
     return <section className="not-found"><Pulse size={40} /><h1>Carregando produto...</h1></section>;
   }
   if (!client && persistedClient?.source === "persisted") {
-    return <PersistedProductDetail product={persistedClient} backTarget={backTarget} />;
+    return <PersistedProductDetail product={persistedClient} backTarget={backTarget} hasTechnology={hasTechnology} />;
   }
   if (!client) {
     return (
@@ -65,7 +68,7 @@ export function ClientDetailPage() {
   const company = getCompany(client.companyId)!;
 
   const metricCards = [
-    { label: "Uso histórico", value: `${client.usage}%`, helper: "indicador demonstrativo", icon: Gauge },
+    ...(hasTechnology ? [{ label: "Uso histórico", value: `${client.usage}%`, helper: "indicador demonstrativo", icon: Gauge }] : []),
     { label: "SLA cumprido", value: `${client.sla}%`, helper: "no mês atual", icon: ClockCountdown },
     { label: "NPS", value: client.nps === null ? "Sem resposta" : String(client.nps), helper: client.nps === null ? "pesquisa mais recente" : "última pesquisa", icon: Smiley },
     { label: "Chamados abertos", value: String(client.openTickets), helper: "em acompanhamento", icon: Ticket },
@@ -99,8 +102,8 @@ export function ClientDetailPage() {
         <div className="explanation-icon"><Lightbulb size={25} weight="duotone" /></div>
         <div>
           <span>Por que este produto exige atenção?</span>
-          <h2>{client.primarySignal}</h2>
-          <p>{client.explanation}</p>
+          <h2>{hasTechnology ? client.primarySignal : `SLA em ${client.sla}% e NPS ${company.nps ?? "sem resposta"}`}</h2>
+          <p>{hasTechnology ? client.explanation : "A leitura usa atendimento, relacionamento e dados financeiros disponíveis, sem sinais de uso da aplicação."}</p>
         </div>
       </section>
 
@@ -118,17 +121,17 @@ export function ClientDetailPage() {
       <section className="detail-main-grid">
         <article className="panel trend-panel">
           <div className="panel-heading">
-            <div><span>Histórico demonstrativo · últimos seis meses</span><h2>Uso e qualidade do serviço</h2></div>
-            <div className="chart-legend"><span><i className="legend-dot legend-dot--cyan" /> Uso</span><span><i className="legend-dot legend-dot--blue" /> SLA</span></div>
+            <div><span>Histórico demonstrativo · últimos seis meses</span><h2>{hasTechnology ? "Uso e qualidade do serviço" : "Qualidade do serviço"}</h2></div>
+            <div className="chart-legend">{hasTechnology && <span><i className="legend-dot legend-dot--cyan" /> Uso</span>}<span><i className="legend-dot legend-dot--blue" /> SLA</span></div>
           </div>
-          <div className="detail-chart" aria-label="Evolução de uso e SLA">
+          <div className="detail-chart" aria-label={hasTechnology ? "Evolução de uso e SLA" : "Evolução do SLA"}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={client.usageAndSla} margin={{ top: 18, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(255,255,255,.07)" vertical={false} />
                 <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 12 }} />
                 <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: "#8593ae", fontSize: 12 }} />
                 <Tooltip content={<DetailTooltip />} />
-                <Line isAnimationActive={false} type="monotone" dataKey="uso" name="Uso" stroke="#00f3ff" strokeWidth={3} dot={{ r: 3, fill: "#00f3ff", strokeWidth: 0 }} />
+                {hasTechnology && <Line isAnimationActive={false} type="monotone" dataKey="uso" name="Uso" stroke="#00f3ff" strokeWidth={3} dot={{ r: 3, fill: "#00f3ff", strokeWidth: 0 }} />}
                 <Line isAnimationActive={false} type="monotone" dataKey="sla" name="SLA" stroke="#4779ff" strokeWidth={2.5} dot={{ r: 3, fill: "#4779ff", strokeWidth: 0 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -149,7 +152,7 @@ export function ClientDetailPage() {
         </article>
       </section>
 
-      <section className="panel feature-panel">
+      {hasTechnology && <section className="panel feature-panel">
         <div className="panel-heading feature-panel-heading">
           <div><span>Saúde demonstrativa</span><h2>Saúde das funcionalidades</h2></div>
           <p>Indicadores demonstrativos: uma função crítica pode gerar atenção mesmo quando o acesso geral permanece estável.</p>
@@ -168,11 +171,11 @@ export function ClientDetailPage() {
             </article>
           ))}
         </div>
-      </section>
+      </section>}
 
-      <ProductUsageAnalytics key={client.id} clientId={client.id} demoEvents={client.events} />
+      {hasTechnology && <ProductUsageAnalytics key={client.id} clientId={client.id} demoEvents={client.events} />}
 
-      <section className="detail-bottom-grid">
+      {hasTechnology && <section className="detail-bottom-grid">
         <article className="panel">
           <div className="panel-heading"><div><span>Evidências</span><h2>Linha do tempo de sinais</h2></div></div>
           <div className="timeline">
@@ -189,7 +192,7 @@ export function ClientDetailPage() {
           <div className="panel-heading"><div><span>Evidências do produto</span><h2>Eventos recentes</h2></div></div>
           <ClientRecentEvents clientId={client.id} demoEvents={client.events} />
         </article>
-      </section>
+      </section>}
 
       <footer className="mock-footer">
         <UsersThree size={18} /> Produto de {company.name}. Dados demonstrativos; nenhuma classificação representa uma previsão real.
@@ -198,7 +201,7 @@ export function ClientDetailPage() {
   );
 }
 
-function PersistedProductDetail({ product, backTarget }: { product: PortfolioProductRecord; backTarget: string }) {
+function PersistedProductDetail({ product, backTarget, hasTechnology }: { product: PortfolioProductRecord; backTarget: string; hasTechnology: boolean }) {
   return (
     <div className="client-detail-page">
       <Link className="back-link" to={backTarget}><ArrowLeft size={18} /> Voltar à carteira</Link>
@@ -224,17 +227,17 @@ function PersistedProductDetail({ product, backTarget }: { product: PortfolioPro
         <div className="explanation-icon"><Lightbulb size={25} weight="duotone" /></div>
         <div>
           <span>Estado inicial</span>
-          <h2>Produto cadastrado e pronto para receber telemetria</h2>
+          <h2>{hasTechnology ? "Produto cadastrado e pronto para receber telemetria" : "Produto cadastrado e aguardando dados comerciais"}</h2>
           <p>Risco, score, SLA, NPS, receita e histórico não foram inventados. Esses indicadores permanecerão sem dados até serem fornecidos por suas fontes adequadas.</p>
         </div>
       </section>
 
-      <ProductUsageAnalytics key={product.id} clientId={product.id} demoEvents={[]} />
+      {hasTechnology && <ProductUsageAnalytics key={product.id} clientId={product.id} demoEvents={[]} />}
 
-      <section className="panel">
+      {hasTechnology && <section className="panel">
         <div className="panel-heading"><div><span>Evidências do produto</span><h2>Eventos recentes</h2></div></div>
         <ClientRecentEvents clientId={product.id} demoEvents={[]} />
-      </section>
+      </section>}
 
       <footer className="mock-footer">
         <UsersThree size={18} /> Produto de {product.companyName}. Cadastro persistido; dados comerciais ainda não informados.

@@ -15,7 +15,6 @@ import {
 import { type ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { useAdaptiveAnalysis } from "../analysis/AnalysisContext";
 import { useChurnAnalysis } from "../churn/churnAnalysis";
 
 interface AppShellProps {
@@ -45,9 +44,7 @@ export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { account, logout } = useAuth();
-  const { result: adaptiveAnalysis } = useAdaptiveAnalysis();
-  const { analysis: technologyAnalysis } = useChurnAnalysis(account?.id);
-  const analysis = account?.profile === "technology" ? technologyAnalysis : adaptiveAnalysis;
+  const { analysis } = useChurnAnalysis(account?.id);
   const navItems = account?.profile === "technology" ? technologyNav : generalNav;
 
   const leaveAccount = () => {
@@ -133,7 +130,7 @@ export function AppShell({ children }: AppShellProps) {
             <span>{analysis ? `Execução de ${new Date(analysis.generatedAt).toLocaleDateString("pt-BR")}` : "Aguardando cadastro da fonte"}</span>
           </div>
           <div className="topbar-actions">
-            <span className="demo-chip">{analysis ? `${analysis.summary.analyzedEntities} ${account?.profile === "technology" ? "clientes" : adaptiveAnalysis?.config.objective.entityLabelPlural ?? "entidades"} analisados` : "Fonte da conta"}</span>
+            <span className="demo-chip">{analysis ? `${analysis.summary.analyzedEntities} clientes analisados` : "Fonte da conta"}</span>
             <button
               className="icon-button"
               type="button"

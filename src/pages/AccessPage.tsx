@@ -218,12 +218,12 @@ export function AccessPage() {
                 <span>Acessos rápidos</span>
                 <button type="button" onClick={() => enterDemo("technology")}>
                   <span className="demo-access-icon"><Robot size={21} weight="duotone" /></span>
-                  <span><strong>Nexora Sistemas</strong><small>Produto tecnológico e tracking</small></span>
+                  <span><strong>Globalsys · com conexões</strong><small>Carteira somada aos eventos das aplicações</small></span>
                   <ArrowRight size={16} />
                 </button>
                 <button type="button" onClick={() => enterDemo("general")}>
                   <span className="demo-access-icon"><FileXls size={21} weight="duotone" /></span>
-                  <span><strong>Grupo Horizonte</strong><small>Análise preditiva por planilha</small></span>
+                  <span><strong>Globalsys · sem conexões</strong><small>Somente a base de clientes</small></span>
                   <ArrowRight size={16} />
                 </button>
               </div>

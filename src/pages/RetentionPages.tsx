@@ -84,16 +84,18 @@ function ActiveClients({
 }) {
   const { account } = useAuth();
   const { companies, persistedProducts, getProduct } = usePortfolio();
+  const hasTelemetry = account?.profile === "technology";
+  const effectiveTelemetryFilter = hasTelemetry ? telemetryFilter : "all";
   const telemetryFor = (productId: string) => getProduct(productId)?.telemetry ?? disconnectedProductTelemetry;
-  const newClients = attentionOnly || telemetryFilter === "connected" ? [] : registered;
+  const newClients = attentionOnly || effectiveTelemetryFilter === "connected" ? [] : registered;
   const visibleProducts = portfolioProducts.filter((product) => (
     (!attentionOnly || product.riskLevel !== "Baixo")
-    && matchesTelemetryFilter(telemetryFor(product.id), telemetryFilter)
+    && matchesTelemetryFilter(telemetryFor(product.id), effectiveTelemetryFilter)
   ));
   const visibleCompanies = attentionOnly ? attentionCompanies : attentionCompanies;
   const visiblePersistedProducts = attentionOnly
     ? []
-    : persistedProducts.filter((product) => matchesTelemetryFilter(product.telemetry, telemetryFilter));
+    : persistedProducts.filter((product) => matchesTelemetryFilter(product.telemetry, effectiveTelemetryFilter));
   const persistedByCompany = useMemo(() => {
     const groups = new Map<string, typeof persistedProducts>();
     visiblePersistedProducts.forEach((product) => {
@@ -128,7 +130,7 @@ function ActiveClients({
             <button type="button" className={view === "produtos" ? "active" : ""} aria-pressed={view === "produtos"} onClick={() => onViewChange("produtos")}>Produto</button>
             <button type="button" className={view === "empresas" ? "active" : ""} aria-pressed={view === "empresas"} onClick={() => onViewChange("empresas")}>Empresa</button>
           </div>
-          {view === "produtos" && (
+          {hasTelemetry && view === "produtos" && (
             <div className="telemetry-filter" role="group" aria-label="Filtrar produtos por telemetria">
               {([
                 ["all", "Todos"],
@@ -156,10 +158,10 @@ function ActiveClients({
             {newClients.map((client) => <NewClientRow key={client.id} client={client} view={view} />)}
             {view === "produtos" ? <>
             {visibleProducts.map((product) => { const company = getCompany(product.companyId)!; const telemetry = telemetryFor(product.id); return (
-              <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small><ProductTelemetryStatus telemetry={telemetry} /></td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{account?.profile === "technology" ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
+              <tr key={product.id}><td><strong>{product.productName}</strong><small>{company.name} · {product.plan}</small>{hasTelemetry && <ProductTelemetryStatus telemetry={telemetry} />}</td><td>{company.segment}</td><td><RiskBadge level={product.riskLevel} score={product.riskScore} /></td><td className="revenue-cell">{formatCurrency(product.monthlyRevenue)}</td><td className="signal-cell">{hasTelemetry ? product.primarySignal : `SLA ${product.sla}% · NPS ${company.nps ?? "sem dado"}`}</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
             ); })}
             {visiblePersistedProducts.map((product) => (
-              <tr key={product.id}><td><strong>{product.productName}</strong><small>{product.companyName} · Dados comerciais não informados</small><ProductTelemetryStatus telemetry={product.telemetry} /></td><td>Não informado</td><td>Sem dados</td><td className="revenue-cell">Não informado</td><td className="signal-cell">Sem evidência comercial</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
+              <tr key={product.id}><td><strong>{product.productName}</strong><small>{product.companyName} · Dados comerciais não informados</small>{hasTelemetry && <ProductTelemetryStatus telemetry={product.telemetry} />}</td><td>Não informado</td><td>Sem dados</td><td className="revenue-cell">Não informado</td><td className="signal-cell">Sem evidência comercial</td><td><Link className="table-action" to={`/clientes/${product.id}`}>Ver produto <ArrowRight size={14} /></Link></td></tr>
             ))}
           </> : <>
             {visibleCompanies.map((portfolio) => {
