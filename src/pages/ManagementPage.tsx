@@ -3,6 +3,7 @@ import {
   Briefcase,
   CalendarCheck,
   ClipboardText,
+  Database,
   Funnel,
   Lightbulb,
   Plus,
@@ -27,6 +28,8 @@ import {
   YAxis,
 } from "recharts";
 import { useAuth } from "../auth/AuthContext";
+import { GeneralManagementView } from "../churn/GeneralManagementView";
+import { useChurnAnalysis } from "../churn/churnAnalysis";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
 import {
   managementDemoToday,
@@ -58,9 +61,11 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 export function ManagementPage() {
   const { account } = useAuth();
   const { cases, addCase, updateCase } = useManagement();
+  const [activeView, setActiveView] = useState<"focus" | "execution">("focus");
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState({ productId: allProducts[0].id, title: "", owner: managementOwners[0], dueDate: "2026-09-26", stage: "detected" as RetentionCaseStage, note: "" });
   const isTechnology = account?.profile === "technology";
+  const { analysis: churnAnalysis, loading: churnLoading } = useChurnAnalysis(account?.id);
 
   const funnelData = stageOrder.map((stage, index) => {
     const matching = cases.filter((item) => stageOrder.indexOf(item.stage) >= index);
@@ -97,6 +102,9 @@ export function ManagementPage() {
   const atlasPortfolio = companyPortfolios.find((portfolio) => portfolio.company.id === "atlas-logistica");
   const funnelEfficiency = funnelData[0].value ? Math.round((funnelData[3].value / funnelData[0].value) * 100) : 0;
 
+  if (churnLoading) return <div className="general-empty-state"><Database size={36} /><h1>Carregando a fonte ativa...</h1></div>;
+  if (!churnAnalysis) return <div className="general-empty-state"><Database size={36} /><h1>Cadastre uma planilha para formar a fila de gestão.</h1><Link className="primary-button" to="/dados">Cadastrar planilha</Link></div>;
+
   const createCase = (event: FormEvent) => {
     event.preventDefault();
     addCase(draft);
@@ -106,6 +114,18 @@ export function ManagementPage() {
 
   return (
     <div className="management-page">
+      <nav className="management-view-switch" aria-label="Visão da gestão">
+        <button type="button" className={activeView === "focus" ? "is-active" : ""} aria-pressed={activeView === "focus"} onClick={() => setActiveView("focus")}>
+          <span><Target size={20} weight="duotone" /></span>
+          <div><strong>Onde concentrar</strong><small>Risco, impacto e fila prioritária</small></div>
+        </button>
+        <button type="button" className={activeView === "execution" ? "is-active" : ""} aria-pressed={activeView === "execution"} onClick={() => setActiveView("execution")}>
+          <span><ClipboardText size={20} weight="duotone" /></span>
+          <div><strong>Como o time está agindo</strong><small>Ações, responsáveis e resultados</small></div>
+        </button>
+      </nav>
+
+      {activeView === "focus" ? <GeneralManagementView analysis={churnAnalysis} /> : <>
       <header className="page-heading management-heading">
         <div><span className="eyebrow"><Briefcase size={16} weight="duotone" /> Gestão da retenção</span><h1>O time está agindo sobre os riscos?</h1><p>{isTechnology ? "Transforme sinais de uso, suporte e relacionamento em uma operação clara de retenção." : "Transforme evidências da base de dados em responsáveis, prazos e resultados mensuráveis."}</p></div>
         <div className="management-period"><small>Período demonstrativo</small><strong>Abr — Set 2026</strong><span>Atualizado hoje às 09:42</span></div>
@@ -186,6 +206,7 @@ export function ManagementPage() {
       </section>
 
       <footer className="management-disclaimer"><ShieldWarning size={18} /><span><strong>Ambiente demonstrativo:</strong> regras, séries, recuperações e recomendações não representam um modelo real. As ações editadas permanecem somente neste navegador.</span></footer>
+      </>}
     </div>
   );
 }

@@ -867,7 +867,7 @@ function installMiddleware(server) {
 
     try {
       const handled = await handleApi(request, response, database, encryptionKey);
-      if (!handled) sendJson(response, 404, { error: "Endpoint não encontrado." });
+      if (!handled) next();
     } catch (error) {
       console.error("[connections-api]", error);
       if (!response.headersSent) {

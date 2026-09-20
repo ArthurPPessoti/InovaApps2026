@@ -26,6 +26,9 @@ import {
 } from "recharts";
 import { RiskBadge, formatCurrency } from "../components/StatusUI";
 import { PredictiveInsights } from "../components/PredictiveInsights";
+import { useAuth } from "../auth/AuthContext";
+import { ChurnSummaryPanel } from "../churn/ChurnViews";
+import { useChurnAnalysis } from "../churn/churnAnalysis";
 import { attentionCompanies, companyPortfolioSummary, getCompany, portfolioProducts, portfolioSeries, productPortfolioSummary, segmentAttention } from "../data/mockData";
 
 const periodOptions = [
@@ -50,6 +53,8 @@ export function ChartTooltip({ active, payload, label }: { active?: boolean; pay
 }
 
 export function DashboardPage() {
+  const { account } = useAuth();
+  const { analysis: churnAnalysis } = useChurnAnalysis(account?.id);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -192,6 +197,8 @@ export function DashboardPage() {
           </div>
         </article>
       </section>
+
+      {churnAnalysis && <ChurnSummaryPanel analysis={churnAnalysis} />}
 
       <PredictiveInsights profile="technology" />
 

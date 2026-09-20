@@ -15,6 +15,8 @@ import {
 import { type ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useAdaptiveAnalysis } from "../analysis/AnalysisContext";
+import { useChurnAnalysis } from "../churn/churnAnalysis";
 
 interface AppShellProps {
   children: ReactNode;
@@ -22,6 +24,7 @@ interface AppShellProps {
 
 const technologyNav = [
   { label: "Visão geral", to: "/#resumo", hash: "#resumo", icon: ChartLineUp },
+  { label: "Dados", to: "/dados", icon: FileXls },
   { label: "Previsões", to: "/previsoes", icon: MagicWand },
   { label: "Gestão", to: "/gestao", icon: Briefcase },
   { label: "Clientes", to: "/clientes", icon: UsersThree },
@@ -42,6 +45,9 @@ export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { account, logout } = useAuth();
+  const { result: adaptiveAnalysis } = useAdaptiveAnalysis();
+  const { analysis: technologyAnalysis } = useChurnAnalysis(account?.id);
+  const analysis = account?.profile === "technology" ? technologyAnalysis : adaptiveAnalysis;
   const navItems = account?.profile === "technology" ? technologyNav : generalNav;
 
   const leaveAccount = () => {
@@ -103,8 +109,8 @@ export function AppShell({ children }: AppShellProps) {
         <div className="sidebar-insight">
           <ListChecks size={22} weight="duotone" />
           <div>
-            <strong>Dados demonstrativos</strong>
-            <span>{account?.profile === "technology" ? "Analytics real; demais scores são demonstrativos." : "Planilha e análises são mocks."}</span>
+            <strong>Fonte de clientes</strong>
+            <span>{analysis?.source.fileName ?? "Cadastre uma planilha"}</span>
           </div>
         </div>
 
@@ -124,10 +130,10 @@ export function AppShell({ children }: AppShellProps) {
         <header className="topbar">
           <div className="topbar-status">
             <span className="status-live" aria-hidden="true" />
-            <span>Atualizado hoje às 09:42</span>
+            <span>{analysis ? `Execução de ${new Date(analysis.generatedAt).toLocaleDateString("pt-BR")}` : "Aguardando cadastro da fonte"}</span>
           </div>
           <div className="topbar-actions">
-            <span className="demo-chip">Ambiente demonstrativo</span>
+            <span className="demo-chip">{analysis ? `${analysis.summary.analyzedEntities} ${account?.profile === "technology" ? "clientes" : adaptiveAnalysis?.config.objective.entityLabelPlural ?? "entidades"} analisados` : "Fonte da conta"}</span>
             <button
               className="icon-button"
               type="button"

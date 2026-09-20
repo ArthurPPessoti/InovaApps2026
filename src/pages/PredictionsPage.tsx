@@ -1,28 +1,27 @@
-import { CalendarBlank, ChartLineUp, CurrencyCircleDollar, MagicWand, ShieldWarning } from "@phosphor-icons/react";
+import { MagicWand, ShieldWarning } from "@phosphor-icons/react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { PredictiveInsights } from "../components/PredictiveInsights";
+import { ChurnPredictionsView } from "../churn/ChurnViews";
+import { ConnectedPredictiveScenarios } from "../churn/ConnectedPredictiveScenarios";
+import { useChurnAnalysis } from "../churn/churnAnalysis";
 
 export function PredictionsPage() {
   const { account } = useAuth();
-  const profile = account?.profile ?? "general";
+  const { analysis, loading, error } = useChurnAnalysis(account?.id);
 
   return (
     <div className="predictions-page">
       <header className="page-heading predictions-page-heading">
-        <div><span className="eyebrow"><MagicWand size={16} weight="fill" /> Evolução futura da carteira</span><h1>O que pode acontecer nos próximos 90 dias?</h1><p>Explore movimentos prováveis da carteira e identifique onde uma intervenção antecipada pode preservar valor.</p></div>
-        <span className="forecast-confidence">Cenários demonstrativos · confiança média</span>
+        <div><span className="eyebrow"><MagicWand size={16} weight="fill" /> Probabilidade e cenários</span><h1>O que pode acontecer nos próximos 90 dias?</h1><p>Primeiro, veja a probabilidade calculada com dados históricos. Depois, explore cenários gerenciais simulados sem misturar os dois resultados.</p></div>
+        <span className="forecast-confidence">Fonte ativa · horizonte de 90 dias</span>
       </header>
 
-      <section className="metrics-grid" aria-label="Resumo das previsões">
-        <article className="metric-card metric-card--primary"><div className="metric-icon"><CalendarBlank size={22} weight="duotone" /></div><span>Horizonte analisado</span><strong>90 dias</strong><small>Janela operacional</small></article>
-        <article className="metric-card"><div className="metric-icon"><ChartLineUp size={22} weight="duotone" /></div><span>Produtos migrando</span><strong>7</strong><small>Podem deixar a faixa saudável</small></article>
-        <article className="metric-card"><div className="metric-icon metric-icon--danger"><ShieldWarning size={22} weight="duotone" /></div><span>Novos riscos altos</span><strong>+3</strong><small>Cenário sem intervenção</small></article>
-        <article className="metric-card"><div className="metric-icon"><CurrencyCircleDollar size={22} weight="duotone" /></div><span>Amplitude financeira</span><strong>R$ 342 mil</strong><small>Diferença entre cenários em 180 dias</small></article>
-      </section>
+      {loading && <section className="panel churn-loading" role="status">Calculando a leitura mais recente do modelo...</section>}
+      {error && <section className="panel churn-error" role="alert"><ShieldWarning size={20} />{error}</section>}
+      {analysis && <><ChurnPredictionsView analysis={analysis} /><ConnectedPredictiveScenarios analysis={analysis} mode="details" /></>}
+      {!loading && !analysis && <section className="panel prediction-source-empty"><ShieldWarning size={24} /><div><h2>Nenhuma fonte analisada nesta conta</h2><p>Cadastre uma planilha para que Previsões use os mesmos clientes do Dashboard e da área de Clientes.</p></div><Link className="primary-button" to="/dados">Cadastrar planilha</Link></section>}
 
-      <PredictiveInsights profile={profile} mode="details" />
-
-      <footer className="prediction-disclaimer"><ShieldWarning size={18} /><span><strong>Como interpretar:</strong> direção e intensidade são demonstrativas. Nenhuma probabilidade ou data de cancelamento foi calculada por um modelo real.</span></footer>
+      {analysis && <footer className="prediction-disclaimer"><ShieldWarning size={18} /><span><strong>Como interpretar:</strong> a probabilidade indica chance de cancelamento no horizonte analisado. Abra um cliente para ver os fatores, os valores observados e a regra da classificação.</span></footer>}
     </div>
   );
 }

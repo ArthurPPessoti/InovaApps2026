@@ -1,0 +1,5452 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-09-20T00:27:02.799840+00:00",
+  "source": {
+    "fileName": "INOVAAPPS_base_de_dados.xlsx",
+    "sha256": "5edcab8c56ed65efaed608321b1020e20cc2f27d6c02c321124d15dec632a2dc",
+    "observedFrom": "2025-01",
+    "observedUntil": "2026-06",
+    "entities": 80,
+    "cancelledEntities": 22,
+    "activeEntities": 58
+  },
+  "readiness": {
+    "stage": "active",
+    "reason": "Análise calculada com histórico e desfecho disponíveis.",
+    "isProductionReady": false
+  },
+  "model": {
+    "name": "Churn 90 dias",
+    "version": "churn-90d-v1",
+    "algorithm": "LogisticRegression",
+    "selectedC": 0.05,
+    "horizonDays": 90,
+    "trainedUntil": "2026-03",
+    "independentChurnEvents": 22,
+    "trainingSnapshots": 952,
+    "test": {
+      "snapshots": 201,
+      "entities": 69,
+      "positiveSnapshots": 18,
+      "positiveEntitiesLatestSnapshot": 11,
+      "prAuc": 0.710637,
+      "rocAuc": 0.935944,
+      "brierScore": 0.046448,
+      "logLoss": 0.169589,
+      "precisionAt10": 0.8,
+      "recallAt10": 0.727273,
+      "liftAt10": 5.018182,
+      "revenueCapturedAt10": 0.74613,
+      "calibration": [
+        {
+          "meanProbability": 0.012156,
+          "observedRate": 0.0,
+          "count": 41
+        },
+        {
+          "meanProbability": 0.025592,
+          "observedRate": 0.0,
+          "count": 40
+        },
+        {
+          "meanProbability": 0.045479,
+          "observedRate": 0.0,
+          "count": 40
+        },
+        {
+          "meanProbability": 0.085692,
+          "observedRate": 0.05,
+          "count": 40
+        },
+        {
+          "meanProbability": 0.351748,
+          "observedRate": 0.4,
+          "count": 40
+        }
+      ]
+    },
+    "globalFactors": [
+      {
+        "feature": "categorical__plano_Essencial",
+        "label": "Plano: Essencial",
+        "direction": "reduces_risk",
+        "coefficient": -0.592451
+      },
+      {
+        "feature": "categorical__porte_Pequeno",
+        "label": "Porte: Pequeno",
+        "direction": "reduces_risk",
+        "coefficient": -0.592451
+      },
+      {
+        "feature": "categorical__latest_nps_classification_Neutro",
+        "label": "Classificação do NPS: Neutro",
+        "direction": "reduces_risk",
+        "coefficient": -0.452799
+      },
+      {
+        "feature": "categorical__porte_Grande",
+        "label": "Porte: Grande",
+        "direction": "reduces_risk",
+        "coefficient": -0.424501
+      },
+      {
+        "feature": "categorical__plano_Enterprise",
+        "label": "Plano: Enterprise",
+        "direction": "reduces_risk",
+        "coefficient": -0.424501
+      },
+      {
+        "feature": "categorical__latest_nps_classification_Detrator",
+        "label": "Classificação do NPS: Detrator",
+        "direction": "reduces_risk",
+        "coefficient": -0.405309
+      },
+      {
+        "feature": "categorical__plano_Avancado",
+        "label": "Plano: Avançado",
+        "direction": "reduces_risk",
+        "coefficient": -0.392376
+      },
+      {
+        "feature": "categorical__porte_Medio",
+        "label": "Porte: Médio",
+        "direction": "reduces_risk",
+        "coefficient": -0.392376
+      },
+      {
+        "feature": "numeric__latest_nps",
+        "label": "Último NPS",
+        "direction": "reduces_risk",
+        "coefficient": -0.347968
+      },
+      {
+        "feature": "categorical__segmento_Saude",
+        "label": "Segmento: Saúde",
+        "direction": "reduces_risk",
+        "coefficient": -0.341403
+      },
+      {
+        "feature": "categorical__segmento_Logistica",
+        "label": "Segmento: Logística",
+        "direction": "reduces_risk",
+        "coefficient": -0.332461
+      },
+      {
+        "feature": "categorical__segmento_Educacao",
+        "label": "Segmento: Educação",
+        "direction": "reduces_risk",
+        "coefficient": -0.322553
+      }
+    ]
+  },
+  "predictionRun": {
+    "asOfDate": "2026-06-30",
+    "horizonDays": 90,
+    "status": "completed"
+  },
+  "summary": {
+    "analyzedEntities": 58,
+    "totalMonthlyRevenue": 707998,
+    "expectedMonthlyRevenueAtRisk": 38159.06,
+    "portfolioProbabilityWeighted": 0.053897,
+    "averageProbability": 0.051347,
+    "highOrCriticalEntities": 3,
+    "distribution": {
+      "LOW": 52,
+      "ATTENTION": 3,
+      "HIGH": 3,
+      "CRITICAL": 0
+    }
+  },
+  "predictions": [
+    {
+      "subjectId": "C071",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 33881,
+      "probability": 0.253746,
+      "probabilityBand": "HIGH",
+      "expectedMonthlyRevenueAtRisk": 8597.17,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_mean_3m",
+          "label": "Reclamações formais, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.386317
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "increases_risk",
+          "contribution": 0.357371
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.319895
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 76.3,
+          "average3m": 78.6,
+          "change3m": -7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 75,
+          "slaAverage3m": 70.63,
+          "slaChange3m": -1.9,
+          "openTickets": 12,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 40.2,
+          "formalComplaints": 3
+        },
+        "relationship": {
+          "latestNps": 7,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 33881
+        }
+      }
+    },
+    {
+      "subjectId": "C080",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 20924,
+      "probability": 0.255808,
+      "probabilityBand": "HIGH",
+      "expectedMonthlyRevenueAtRisk": 5352.52,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "increases_risk",
+          "contribution": 0.284435
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__chamados_abertos_mean_3m",
+          "label": "Chamados abertos, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.249422
+        },
+        {
+          "feature": "numeric__chamados_reabertos_mean_3m",
+          "label": "Chamados reabertos, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.21293
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 66.5,
+          "average3m": 69.5,
+          "change3m": -20.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 64.3,
+          "slaAverage3m": 61.27,
+          "slaChange3m": -0.7,
+          "openTickets": 14,
+          "criticalTickets": 2,
+          "reopenedTickets": 4,
+          "resolutionHours": 25.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 20924
+        }
+      }
+    },
+    {
+      "subjectId": "C067",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 8672,
+      "probability": 0.34506,
+      "probabilityBand": "HIGH",
+      "expectedMonthlyRevenueAtRisk": 2992.36,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.986384
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__pct_sla_cumprido_mean_3m",
+          "label": "SLA cumprido, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.237968
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 74.4,
+          "average3m": 72.0,
+          "change3m": -5.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 55.6,
+          "slaAverage3m": 46.3,
+          "slaChange3m": 5.6,
+          "openTickets": 9,
+          "criticalTickets": 3,
+          "reopenedTickets": 3,
+          "resolutionHours": 26.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 2,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 5,
+          "monthlyRevenue": 8672
+        }
+      }
+    },
+    {
+      "subjectId": "C076",
+      "segment": "Educacao",
+      "plan": "Enterprise",
+      "monthlyRevenue": 29057,
+      "probability": 0.065831,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 1912.84,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "increases_risk",
+          "contribution": 0.265951
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.209196
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 79.1,
+          "average3m": 76.7,
+          "change3m": 1,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 87.5,
+          "slaAverage3m": 78.57,
+          "slaChange3m": 1.8,
+          "openTickets": 8,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 35.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 6,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 2,
+          "monthlyRevenue": 29057
+        }
+      }
+    },
+    {
+      "subjectId": "C010",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 31510,
+      "probability": 0.057462,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 1810.62,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__valor_mensal",
+          "label": "Receita mensal",
+          "direction": "reduces_risk",
+          "contribution": -0.197064
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_mean_3m",
+          "label": "Reclamações formais, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.184742
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 80.2,
+          "average3m": 84.83,
+          "change3m": -19.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 57.1,
+          "slaAverage3m": 71.57,
+          "slaChange3m": -9.6,
+          "openTickets": 7,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 22.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 3,
+          "monthlyRevenue": 31510
+        }
+      }
+    },
+    {
+      "subjectId": "C066",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 12375,
+      "probability": 0.144968,
+      "probabilityBand": "ATTENTION",
+      "expectedMonthlyRevenueAtRisk": 1793.97,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.421615
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.279616
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 69.2,
+          "average3m": 78.83,
+          "change3m": -0.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 87.5,
+          "slaAverage3m": 95.83,
+          "slaChange3m": -12.5,
+          "openTickets": 8,
+          "criticalTickets": 3,
+          "reopenedTickets": 1,
+          "resolutionHours": 25.3,
+          "formalComplaints": 2
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 12375
+        }
+      }
+    },
+    {
+      "subjectId": "C011",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 30742,
+      "probability": 0.031176,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 958.43,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.240368
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.23091
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 88.5,
+          "average3m": 87.97,
+          "change3m": 0,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 90.9,
+          "slaAverage3m": 91.4,
+          "slaChange3m": 7.6,
+          "openTickets": 11,
+          "criticalTickets": 2,
+          "reopenedTickets": 5,
+          "resolutionHours": 31.5,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 30742
+        }
+      }
+    },
+    {
+      "subjectId": "C039",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 13092,
+      "probability": 0.070277,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 920.07,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_delta_3m",
+          "label": "Reclamações formais, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.316886
+        },
+        {
+          "feature": "numeric__reclamacoes_formais",
+          "label": "Reclamações formais",
+          "direction": "increases_risk",
+          "contribution": 0.183578
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 78.1,
+          "average3m": 82.47,
+          "change3m": -5.1,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 88.9,
+          "slaAverage3m": 79.63,
+          "slaChange3m": 38.9,
+          "openTickets": 9,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 22.8,
+          "formalComplaints": 2
+        },
+        "relationship": {
+          "latestNps": 7,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 8,
+          "monthlyRevenue": 13092
+        }
+      }
+    },
+    {
+      "subjectId": "C029",
+      "segment": "Varejo",
+      "plan": "Avancado",
+      "monthlyRevenue": 12868,
+      "probability": 0.068819,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 885.56,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.403493
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_delta_3m",
+          "label": "Uso da plataforma, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.182262
+        },
+        {
+          "feature": "categorical__segmento_Varejo",
+          "label": "Segmento: Varejo",
+          "direction": "reduces_risk",
+          "contribution": -0.165093
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 74.2,
+          "average3m": 86.77,
+          "change3m": -24.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 91.67,
+          "slaChange3m": 25,
+          "openTickets": 3,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 18.9,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 6,
+          "monthlyRevenue": 12868
+        }
+      }
+    },
+    {
+      "subjectId": "C002",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 10742,
+      "probability": 0.075405,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 810.0,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.792087
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.321868
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 75,
+          "average3m": 73.43,
+          "change3m": 4.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 62.5,
+          "slaAverage3m": 66.87,
+          "slaChange3m": -4.2,
+          "openTickets": 8,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 12.9,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 3,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 10742
+        }
+      }
+    },
+    {
+      "subjectId": "C061",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 36148,
+      "probability": 0.021094,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 762.5,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.26338
+        },
+        {
+          "feature": "numeric__valor_mensal",
+          "label": "Receita mensal",
+          "direction": "reduces_risk",
+          "contribution": -0.244956
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 68.7,
+          "average3m": 73.97,
+          "change3m": -7.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 80,
+          "slaAverage3m": 75.1,
+          "slaChange3m": 13.3,
+          "openTickets": 10,
+          "criticalTickets": 0,
+          "reopenedTickets": 3,
+          "resolutionHours": 12.2,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 36148
+        }
+      }
+    },
+    {
+      "subjectId": "C070",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 12064,
+      "probability": 0.058037,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 700.15,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "increases_risk",
+          "contribution": 0.212631
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.209196
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 69.7,
+          "average3m": 85.27,
+          "change3m": -18.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 76.67,
+          "slaChange3m": -50,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 26.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 6,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 12064
+        }
+      }
+    },
+    {
+      "subjectId": "C035",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 8760,
+      "probability": 0.072184,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 632.33,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__reclamacoes_formais_delta_3m",
+          "label": "Reclamações formais, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.635277
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "numeric__reclamacoes_formais",
+          "label": "Reclamações formais",
+          "direction": "increases_risk",
+          "contribution": 0.41248
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 84.6,
+          "average3m": 84.6,
+          "change3m": -2.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 60,
+          "slaAverage3m": 67.77,
+          "slaChange3m": 0,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 21,
+          "formalComplaints": 4
+        },
+        "relationship": {
+          "latestNps": 7,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 8760
+        }
+      }
+    },
+    {
+      "subjectId": "C023",
+      "segment": "Logistica",
+      "plan": "Enterprise",
+      "monthlyRevenue": 32645,
+      "probability": 0.018925,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 617.81,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__valor_mensal",
+          "label": "Receita mensal",
+          "direction": "reduces_risk",
+          "contribution": -0.208784
+        },
+        {
+          "feature": "numeric__chamados_criticos_mean_3m",
+          "label": "Chamados críticos, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.204532
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 84.2,
+          "average3m": 84.47,
+          "change3m": 0.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 85.7,
+          "slaAverage3m": 84.13,
+          "slaChange3m": 19,
+          "openTickets": 7,
+          "criticalTickets": 2,
+          "reopenedTickets": 1,
+          "resolutionHours": 23.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 32645
+        }
+      }
+    },
+    {
+      "subjectId": "C062",
+      "segment": "Servicos",
+      "plan": "Enterprise",
+      "monthlyRevenue": 24603,
+      "probability": 0.023853,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 586.86,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "increases_risk",
+          "contribution": 0.227351
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 85.6,
+          "average3m": 74.67,
+          "change3m": 14.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 82.57,
+          "slaChange3m": 25,
+          "openTickets": 6,
+          "criticalTickets": 1,
+          "reopenedTickets": 2,
+          "resolutionHours": 33.8,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 1,
+          "monthlyRevenue": 24603
+        }
+      }
+    },
+    {
+      "subjectId": "C021",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 11994,
+      "probability": 0.047934,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 574.92,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.222792
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_mean_3m",
+          "label": "Reclamações formais, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.184742
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 77.8,
+          "average3m": 81.63,
+          "change3m": 2.6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 77.8,
+          "slaAverage3m": 67.6,
+          "slaChange3m": 27.8,
+          "openTickets": 9,
+          "criticalTickets": 1,
+          "reopenedTickets": 1,
+          "resolutionHours": 21.7,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 2,
+          "monthlyRevenue": 11994
+        }
+      }
+    },
+    {
+      "subjectId": "C036",
+      "segment": "Varejo",
+      "plan": "Avancado",
+      "monthlyRevenue": 8765,
+      "probability": 0.065138,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 570.94,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Varejo",
+          "label": "Segmento: Varejo",
+          "direction": "reduces_risk",
+          "contribution": -0.165093
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.123976
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_mean_3m",
+          "label": "Reclamações formais, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.117621
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 80,
+          "average3m": 84.3,
+          "change3m": -5.1,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 62.5,
+          "slaAverage3m": 66.67,
+          "slaChange3m": 12.5,
+          "openTickets": 8,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 21.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 7,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 1,
+          "monthlyRevenue": 8765
+        }
+      }
+    },
+    {
+      "subjectId": "C056",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 33786,
+      "probability": 0.016361,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 552.77,
+      "dataCoverage": 0.945946,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__valor_mensal",
+          "label": "Receita mensal",
+          "direction": "reduces_risk",
+          "contribution": -0.220566
+        },
+        {
+          "feature": "numeric__missingindicator_meeting_completion",
+          "label": "Ausência de meeting completion",
+          "direction": "reduces_risk",
+          "contribution": -0.203148
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 71.4,
+          "average3m": 80.23,
+          "change3m": -4.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 83.3,
+          "slaAverage3m": 86.1,
+          "slaChange3m": 8.3,
+          "openTickets": 12,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 20.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 33786
+        }
+      }
+    },
+    {
+      "subjectId": "C019",
+      "segment": "Saude",
+      "plan": "Essencial",
+      "monthlyRevenue": 2897,
+      "probability": 0.189023,
+      "probabilityBand": "ATTENTION",
+      "expectedMonthlyRevenueAtRisk": 547.6,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__pct_sla_cumprido_mean_3m",
+          "label": "SLA cumprido, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.25217
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_mean_3m",
+          "label": "Reclamações formais, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.184742
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 85.9,
+          "average3m": 74.9,
+          "change3m": 10.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 44.43,
+          "slaChange3m": 16.7,
+          "openTickets": 6,
+          "criticalTickets": 2,
+          "reopenedTickets": 1,
+          "resolutionHours": 27.5,
+          "formalComplaints": 2
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 8,
+          "monthlyRevenue": 2897
+        }
+      }
+    },
+    {
+      "subjectId": "C018",
+      "segment": "Logistica",
+      "plan": "Enterprise",
+      "monthlyRevenue": 32299,
+      "probability": 0.015876,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 512.77,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.231661
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 89.5,
+          "average3m": 88.5,
+          "change3m": 1.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 90.9,
+          "slaAverage3m": 85.87,
+          "slaChange3m": -9.1,
+          "openTickets": 11,
+          "criticalTickets": 1,
+          "reopenedTickets": 2,
+          "resolutionHours": 24.6,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 8,
+          "monthlyRevenue": 32299
+        }
+      }
+    },
+    {
+      "subjectId": "C037",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 8381,
+      "probability": 0.05788,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 485.1,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_delta_3m",
+          "label": "Uso da plataforma, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.214325
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.167668
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 85.8,
+          "average3m": 71.4,
+          "change3m": 26.2,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 87.5,
+          "slaAverage3m": 75.83,
+          "slaChange3m": 7.5,
+          "openTickets": 8,
+          "criticalTickets": 2,
+          "reopenedTickets": 2,
+          "resolutionHours": 25.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 8381
+        }
+      }
+    },
+    {
+      "subjectId": "C052",
+      "segment": "Saude",
+      "plan": "Enterprise",
+      "monthlyRevenue": 28195,
+      "probability": 0.016276,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 458.91,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.22493
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 89.2,
+          "average3m": 80.67,
+          "change3m": 18.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 72.7,
+          "slaAverage3m": 77,
+          "slaChange3m": -10.6,
+          "openTickets": 11,
+          "criticalTickets": 0,
+          "reopenedTickets": 4,
+          "resolutionHours": 20.7,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 28195
+        }
+      }
+    },
+    {
+      "subjectId": "C033",
+      "segment": "Servicos",
+      "plan": "Essencial",
+      "monthlyRevenue": 4310,
+      "probability": 0.098161,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 423.07,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__pct_sla_cumprido",
+          "label": "SLA cumprido",
+          "direction": "increases_risk",
+          "contribution": 0.398108
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__pct_sla_cumprido_mean_3m",
+          "label": "SLA cumprido, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.235178
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 75.4,
+          "average3m": 79,
+          "change3m": -7.7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 0,
+          "slaAverage3m": 46.67,
+          "slaChange3m": -100,
+          "openTickets": 1,
+          "criticalTickets": 1,
+          "reopenedTickets": 1,
+          "resolutionHours": 27.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 4310
+        }
+      }
+    },
+    {
+      "subjectId": "C060",
+      "segment": "Servicos",
+      "plan": "Essencial",
+      "monthlyRevenue": 2677,
+      "probability": 0.15232,
+      "probabilityBand": "ATTENTION",
+      "expectedMonthlyRevenueAtRisk": 407.76,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_mean_3m",
+          "label": "Reclamações formais, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.28553
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.277562
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_mean_3m",
+          "label": "Tempo médio de resolução, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.267976
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 67.4,
+          "average3m": 65.93,
+          "change3m": -1,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 49.03,
+          "slaChange3m": 10,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 32.1,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 2677
+        }
+      }
+    },
+    {
+      "subjectId": "C050",
+      "segment": "Educacao",
+      "plan": "Avancado",
+      "monthlyRevenue": 12312,
+      "probability": 0.030075,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 370.29,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.179398
+        },
+        {
+          "feature": "numeric__chamados_criticos_mean_3m",
+          "label": "Chamados críticos, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.133318
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 75.2,
+          "average3m": 78.43,
+          "change3m": -1.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 80,
+          "slaAverage3m": 71.13,
+          "slaChange3m": 13.3,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 21.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 12312
+        }
+      }
+    },
+    {
+      "subjectId": "C051",
+      "segment": "Varejo",
+      "plan": "Enterprise",
+      "monthlyRevenue": 24045,
+      "probability": 0.014388,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 345.96,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.46727
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_delta_3m",
+          "label": "Uso da plataforma, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.196263
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 100,
+          "average3m": 87.23,
+          "change3m": 23.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 66.7,
+          "slaAverage3m": 83.33,
+          "slaChange3m": -16.6,
+          "openTickets": 3,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 20.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 4,
+          "monthlyRevenue": 24045
+        }
+      }
+    },
+    {
+      "subjectId": "C078",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 3023,
+      "probability": 0.097562,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 294.93,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.403493
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "numeric__dias_atraso_pagamento",
+          "label": "Atraso de pagamento",
+          "direction": "increases_risk",
+          "contribution": 0.156269
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 72.9,
+          "average3m": 77.97,
+          "change3m": -3.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 60,
+          "slaAverage3m": 86.67,
+          "slaChange3m": -40,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 29.1,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 13,
+          "monthlyRevenue": 3023
+        }
+      }
+    },
+    {
+      "subjectId": "C058",
+      "segment": "Servicos",
+      "plan": "Enterprise",
+      "monthlyRevenue": 34194,
+      "probability": 0.008376,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 286.42,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.26338
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 88.3,
+          "average3m": 86.37,
+          "change3m": 12.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 85.7,
+          "slaAverage3m": 82.5,
+          "slaChange3m": 3.9,
+          "openTickets": 7,
+          "criticalTickets": 1,
+          "reopenedTickets": 1,
+          "resolutionHours": 16.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 34194
+        }
+      }
+    },
+    {
+      "subjectId": "C012",
+      "segment": "Industria",
+      "plan": "Avancado",
+      "monthlyRevenue": 10445,
+      "probability": 0.026531,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 277.11,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.201653
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "reduces_risk",
+          "contribution": -0.183027
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_delta_3m",
+          "label": "Reclamações formais, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.160701
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 78.4,
+          "average3m": 82.97,
+          "change3m": -8.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 70.47,
+          "slaChange3m": 60,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 13.6,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 4,
+          "monthlyRevenue": 10445
+        }
+      }
+    },
+    {
+      "subjectId": "C009",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 2836,
+      "probability": 0.088389,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 250.67,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__pct_sla_cumprido",
+          "label": "SLA cumprido",
+          "direction": "increases_risk",
+          "contribution": 0.22611
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "reduces_risk",
+          "contribution": -0.146459
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.14617
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 78.7,
+          "average3m": 83.57,
+          "change3m": -6.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 33.3,
+          "slaAverage3m": 62.77,
+          "slaChange3m": -46.7,
+          "openTickets": 3,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 15.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 9,
+          "monthlyRevenue": 2836
+        }
+      }
+    },
+    {
+      "subjectId": "C016",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 2940,
+      "probability": 0.081269,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 238.93,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.986384
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_delta_3m",
+          "label": "Reclamações formais, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.160701
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 82,
+          "average3m": 81.4,
+          "change3m": 9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 66.7,
+          "slaAverage3m": 80.57,
+          "slaChange3m": -8.3,
+          "openTickets": 6,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 24.1,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 2,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 2940
+        }
+      }
+    },
+    {
+      "subjectId": "C065",
+      "segment": "Varejo",
+      "plan": "Essencial",
+      "monthlyRevenue": 3805,
+      "probability": 0.056025,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 213.17,
+      "dataCoverage": 0.918919,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__missingindicator_meeting_completion",
+          "label": "Ausência de meeting completion",
+          "direction": "reduces_risk",
+          "contribution": -0.203148
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_mean_3m",
+          "label": "Tempo médio de resolução, média de 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.172278
+        },
+        {
+          "feature": "categorical__segmento_Varejo",
+          "label": "Segmento: Varejo",
+          "direction": "reduces_risk",
+          "contribution": -0.165093
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 83.9,
+          "average3m": 76.57,
+          "change3m": 10.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 75,
+          "slaAverage3m": 85,
+          "slaChange3m": -5,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 27,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 7,
+          "monthlyRevenue": 3805
+        }
+      }
+    },
+    {
+      "subjectId": "C055",
+      "segment": "Servicos",
+      "plan": "Enterprise",
+      "monthlyRevenue": 31660,
+      "probability": 0.00673,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 213.07,
+      "dataCoverage": 0.945946,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "categorical__porte_Grande",
+          "label": "Porte: Grande",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "categorical__plano_Enterprise",
+          "label": "Plano: Enterprise",
+          "direction": "reduces_risk",
+          "contribution": -0.424501
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.337124
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 94.2,
+          "average3m": 91.67,
+          "change3m": -5.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 66.7,
+          "slaAverage3m": 76.47,
+          "slaChange3m": -6,
+          "openTickets": 6,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 19.5,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 31660
+        }
+      }
+    },
+    {
+      "subjectId": "C074",
+      "segment": "Saude",
+      "plan": "Avancado",
+      "monthlyRevenue": 9171,
+      "probability": 0.020725,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 190.07,
+      "dataCoverage": 0.945946,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.174086
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.167376
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 78,
+          "average3m": 88.07,
+          "change3m": -8.2,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 88.9,
+          "slaChange3m": 33.3,
+          "openTickets": 1,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 24,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 3,
+          "monthlyRevenue": 9171
+        }
+      }
+    },
+    {
+      "subjectId": "C044",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 3594,
+      "probability": 0.049308,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 177.21,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_delta_3m",
+          "label": "Reclamações formais, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.160701
+        },
+        {
+          "feature": "numeric__meeting_completion_delta_3m",
+          "label": "Reuniões realizadas, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.158695
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 76.8,
+          "average3m": 74.87,
+          "change3m": -3.2,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 77.77,
+          "slaChange3m": 0,
+          "openTickets": 6,
+          "criticalTickets": 2,
+          "reopenedTickets": 0,
+          "resolutionHours": 21.2,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 10,
+          "monthlyRevenue": 3594
+        }
+      }
+    },
+    {
+      "subjectId": "C027",
+      "segment": "Varejo",
+      "plan": "Avancado",
+      "monthlyRevenue": 12277,
+      "probability": 0.014117,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 173.31,
+      "dataCoverage": 0.945946,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.334899
+        },
+        {
+          "feature": "numeric__missingindicator_pct_sla_cumprido",
+          "label": "Ausência de pct sla cumprido",
+          "direction": "increases_risk",
+          "contribution": 0.252938
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.22493
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 89.2,
+          "average3m": 96.4,
+          "change3m": -10.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": null,
+          "slaAverage3m": 100,
+          "slaChange3m": null,
+          "openTickets": 0,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 13.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 7,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 12277
+        }
+      }
+    },
+    {
+      "subjectId": "C046",
+      "segment": "Educacao",
+      "plan": "Avancado",
+      "monthlyRevenue": 9978,
+      "probability": 0.015339,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 153.05,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.198439
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 82,
+          "average3m": 75.4,
+          "change3m": 13.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 88.57,
+          "slaChange3m": 20,
+          "openTickets": 3,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 21.2,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 2,
+          "monthlyRevenue": 9978
+        }
+      }
+    },
+    {
+      "subjectId": "C069",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 9736,
+      "probability": 0.013693,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 133.31,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.271498
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.202491
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 88.2,
+          "average3m": 82.27,
+          "change3m": 21.2,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 82.23,
+          "slaChange3m": 33.3,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 17.4,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 9736
+        }
+      }
+    },
+    {
+      "subjectId": "C040",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 10388,
+      "probability": 0.012827,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 133.24,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "reduces_risk",
+          "contribution": -0.209438
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.195759
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 87.9,
+          "average3m": 87.87,
+          "change3m": 7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 83.33,
+          "slaChange3m": -50,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 12.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 10388
+        }
+      }
+    },
+    {
+      "subjectId": "C013",
+      "segment": "Servicos",
+      "plan": "Avancado",
+      "monthlyRevenue": 12052,
+      "probability": 0.009506,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 114.56,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.258588
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 90.7,
+          "average3m": 90.7,
+          "change3m": -9.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 95.83,
+          "slaChange3m": 12.5,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 20.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 12052
+        }
+      }
+    },
+    {
+      "subjectId": "C001",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 3848,
+      "probability": 0.022969,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 88.38,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.403493
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.377515
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 96,
+          "average3m": 82.47,
+          "change3m": 16.6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 70,
+          "slaChange3m": -10,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 27.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 6,
+          "monthlyRevenue": 3848
+        }
+      }
+    },
+    {
+      "subjectId": "C049",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 3264,
+      "probability": 0.023892,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 77.98,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "increases_risk",
+          "contribution": 0.282191
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.26338
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 66.6,
+          "average3m": 80.67,
+          "change3m": -17.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 80.57,
+          "slaChange3m": 33.3,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 17.6,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3264
+        }
+      }
+    },
+    {
+      "subjectId": "C059",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 2450,
+      "probability": 0.027598,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 67.62,
+      "dataCoverage": 0.945946,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "increases_risk",
+          "contribution": 0.264411
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.238393
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 89.8,
+          "average3m": 91.43,
+          "change3m": -4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 83.33,
+          "slaChange3m": 0,
+          "openTickets": 1,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 29.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 2450
+        }
+      }
+    },
+    {
+      "subjectId": "C026",
+      "segment": "Varejo",
+      "plan": "Essencial",
+      "monthlyRevenue": 3644,
+      "probability": 0.017812,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 64.91,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.208922
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.179398
+        },
+        {
+          "feature": "numeric__pct_sla_cumprido_mean_3m",
+          "label": "SLA cumprido, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.170588
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 82.8,
+          "average3m": 90.13,
+          "change3m": -6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 3,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 24.5,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3644
+        }
+      }
+    },
+    {
+      "subjectId": "C048",
+      "segment": "Servicos",
+      "plan": "Avancado",
+      "monthlyRevenue": 8238,
+      "probability": 0.007312,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 60.23,
+      "dataCoverage": 0.918919,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Avancado",
+          "label": "Plano: Avançado",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "categorical__porte_Medio",
+          "label": "Porte: Médio",
+          "direction": "reduces_risk",
+          "contribution": -0.392376
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.302734
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.301222
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 92.6,
+          "average3m": 94.8,
+          "change3m": -7.1,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 6,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 13.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 2,
+          "monthlyRevenue": 8238
+        }
+      }
+    },
+    {
+      "subjectId": "C063",
+      "segment": "Servicos",
+      "plan": "Essencial",
+      "monthlyRevenue": 3330,
+      "probability": 0.015448,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 51.44,
+      "dataCoverage": 0.918919,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__segmento_Servicos",
+          "label": "Segmento: Serviços",
+          "direction": "reduces_risk",
+          "contribution": -0.281204
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Sem resposta",
+          "label": "Classificação do NPS: Sem resposta",
+          "direction": "reduces_risk",
+          "contribution": -0.259898
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.218299
+        },
+        {
+          "feature": "numeric__missingindicator_meeting_completion",
+          "label": "Ausência de meeting completion",
+          "direction": "reduces_risk",
+          "contribution": -0.203148
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 81.9,
+          "average3m": 82.67,
+          "change3m": -5.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 93.33,
+          "slaChange3m": 20,
+          "openTickets": 2,
+          "criticalTickets": 2,
+          "reopenedTickets": 0,
+          "resolutionHours": 13.6,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3330
+        }
+      }
+    },
+    {
+      "subjectId": "C064",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 4226,
+      "probability": 0.012074,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 51.02,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.26532
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.236793
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 91,
+          "average3m": 87.87,
+          "change3m": 0.7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 53.33,
+          "slaChange3m": 40,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 16.2,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 6,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 4226
+        }
+      }
+    },
+    {
+      "subjectId": "C042",
+      "segment": "Saude",
+      "plan": "Essencial",
+      "monthlyRevenue": 2908,
+      "probability": 0.015561,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 45.25,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Detrator",
+          "label": "Classificação do NPS: Detrator",
+          "direction": "reduces_risk",
+          "contribution": -0.405309
+        },
+        {
+          "feature": "categorical__segmento_Saude",
+          "label": "Segmento: Saúde",
+          "direction": "reduces_risk",
+          "contribution": -0.341403
+        },
+        {
+          "feature": "numeric__reclamacoes_formais_delta_3m",
+          "label": "Reclamações formais, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.319896
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "increases_risk",
+          "contribution": 0.209196
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 82.7,
+          "average3m": 80.57,
+          "change3m": 2.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 76.67,
+          "slaChange3m": 20,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 21,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 6,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 1,
+          "monthlyRevenue": 2908
+        }
+      }
+    },
+    {
+      "subjectId": "C045",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 3121,
+      "probability": 0.010547,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 32.92,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.402197
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.179398
+        },
+        {
+          "feature": "numeric__chamados_criticos_mean_3m",
+          "label": "Chamados críticos, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.133318
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 97.1,
+          "average3m": 81.6,
+          "change3m": 12.7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 88.9,
+          "slaChange3m": 33.3,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 20.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3121
+        }
+      }
+    },
+    {
+      "subjectId": "C072",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 2678,
+      "probability": 0.011971,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 32.06,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.402197
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.253148
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_mean_3m",
+          "label": "Tempo médio de resolução, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.180611
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 97.1,
+          "average3m": 92.33,
+          "change3m": -0.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 14.5,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 2678
+        }
+      }
+    },
+    {
+      "subjectId": "C057",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 3436,
+      "probability": 0.008578,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 29.47,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.236149
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "reduces_risk",
+          "contribution": -0.227722
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 89.7,
+          "average3m": 82.17,
+          "change3m": 11.6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 91.67,
+          "slaChange3m": 25,
+          "openTickets": 2,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 11.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 3,
+          "monthlyRevenue": 3436
+        }
+      }
+    },
+    {
+      "subjectId": "C079",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 2958,
+      "probability": 0.009101,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 26.92,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.424636
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.373695
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 98.1,
+          "average3m": 80.47,
+          "change3m": 22.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 75,
+          "slaChange3m": 50,
+          "openTickets": 3,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 21.8,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 9,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 2958
+        }
+      }
+    },
+    {
+      "subjectId": "C008",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 4072,
+      "probability": 0.006292,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 25.62,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.352832
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.307073
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 94.9,
+          "average3m": 87.8,
+          "change3m": 12.6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 1,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 12.6,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 10,
+          "monthlyRevenue": 4072
+        }
+      }
+    },
+    {
+      "subjectId": "C003",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 3179,
+      "probability": 0.007257,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 23.07,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "categorical__segmento_Educacao",
+          "label": "Segmento: Educação",
+          "direction": "reduces_risk",
+          "contribution": -0.322553
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.239027
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 85.9,
+          "average3m": 89.37,
+          "change3m": -14.1,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 20.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3179
+        }
+      }
+    },
+    {
+      "subjectId": "C028",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 4228,
+      "probability": 0.0053,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 22.41,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.46727
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct_mean_3m",
+          "label": "Uso da plataforma, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.298044
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Promotor",
+          "label": "Classificação do NPS: Promotor",
+          "direction": "reduces_risk",
+          "contribution": -0.291321
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 100,
+          "average3m": 94.57,
+          "change3m": 14,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 88.9,
+          "slaChange3m": 33.3,
+          "openTickets": 4,
+          "criticalTickets": 1,
+          "reopenedTickets": 1,
+          "resolutionHours": 11.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 2,
+          "monthlyRevenue": 4228
+        }
+      }
+    },
+    {
+      "subjectId": "C068",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 2650,
+      "probability": 0.005736,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 15.2,
+      "dataCoverage": 0.972973,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__latest_nps_classification_Neutro",
+          "label": "Classificação do NPS: Neutro",
+          "direction": "reduces_risk",
+          "contribution": -0.452799
+        },
+        {
+          "feature": "numeric__tenure_months",
+          "label": "Tempo de contrato",
+          "direction": "reduces_risk",
+          "contribution": -0.287733
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "reduces_risk",
+          "contribution": -0.229754
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_mean_3m",
+          "label": "Tempo médio de resolução, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.218491
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 87.4,
+          "average3m": 79.9,
+          "change3m": 8.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 11.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 8,
+          "npsClassification": "Neutro",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 2650
+        }
+      }
+    },
+    {
+      "subjectId": "C006",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 3458,
+      "probability": 0.001906,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 6.59,
+      "dataCoverage": 0.945946,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_mean_3m",
+          "label": "Tempo médio de resolução, média de 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.396929
+        },
+        {
+          "feature": "numeric__uso_plataforma_pct",
+          "label": "Uso da plataforma",
+          "direction": "reduces_risk",
+          "contribution": -0.359563
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 95.2,
+          "average3m": 91.13,
+          "change3m": 10.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 100,
+          "slaChange3m": 0,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 11.7,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3458
+        }
+      }
+    },
+    {
+      "subjectId": "C005",
+      "segment": "Logistica",
+      "plan": "Essencial",
+      "monthlyRevenue": 2467,
+      "probability": 0.002286,
+      "probabilityBand": "LOW",
+      "expectedMonthlyRevenueAtRisk": 5.64,
+      "dataCoverage": 1.0,
+      "topFactors": [
+        {
+          "feature": "categorical__plano_Essencial",
+          "label": "Plano: Essencial",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "categorical__porte_Pequeno",
+          "label": "Porte: Pequeno",
+          "direction": "reduces_risk",
+          "contribution": -0.592451
+        },
+        {
+          "feature": "numeric__latest_nps",
+          "label": "Último NPS",
+          "direction": "reduces_risk",
+          "contribution": -0.567992
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h_delta_3m",
+          "label": "Tempo médio de resolução, variação em 3 meses",
+          "direction": "reduces_risk",
+          "contribution": -0.405094
+        },
+        {
+          "feature": "numeric__tempo_medio_resolucao_h",
+          "label": "Tempo médio de resolução",
+          "direction": "reduces_risk",
+          "contribution": -0.369932
+        },
+        {
+          "feature": "categorical__segmento_Logistica",
+          "label": "Segmento: Logística",
+          "direction": "reduces_risk",
+          "contribution": -0.332461
+        }
+      ],
+      "evidence": {
+        "usage": {
+          "current": 92,
+          "average3m": 79.83,
+          "change3m": 19.6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 100,
+          "slaAverage3m": 55.57,
+          "slaChange3m": 33.3,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 4.4,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 10,
+          "npsClassification": "Promotor",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 2467
+        }
+      }
+    }
+  ],
+  "historicalChurn": [
+    {
+      "subjectId": "C004",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 3939,
+      "cancelledMonth": "2026-05",
+      "lastObservedMonth": "2026-04",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 60.5,
+          "average3m": 61.07,
+          "change3m": -8.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 40,
+          "slaAverage3m": 37.77,
+          "slaChange3m": 6.7,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 1,
+          "resolutionHours": 35.1,
+          "formalComplaints": 2
+        },
+        "relationship": {
+          "latestNps": 1,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 3939
+        }
+      }
+    },
+    {
+      "subjectId": "C007",
+      "segment": "Saude",
+      "plan": "Enterprise",
+      "monthlyRevenue": 32602,
+      "cancelledMonth": "2026-03",
+      "lastObservedMonth": "2026-02",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 47.8,
+          "average3m": 52.4,
+          "change3m": -15.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 34.8,
+          "slaAverage3m": 55.27,
+          "slaChange3m": -52.7,
+          "openTickets": 23,
+          "criticalTickets": 3,
+          "reopenedTickets": 5,
+          "resolutionHours": 37.8,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 19,
+          "monthlyRevenue": 32602
+        }
+      }
+    },
+    {
+      "subjectId": "C014",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 12518,
+      "cancelledMonth": "2025-12",
+      "lastObservedMonth": "2025-11",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 51.9,
+          "average3m": 59.53,
+          "change3m": -13.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 66.7,
+          "slaAverage3m": 79.17,
+          "slaChange3m": -16.6,
+          "openTickets": 6,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 33.8,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 12518
+        }
+      }
+    },
+    {
+      "subjectId": "C015",
+      "segment": "Varejo",
+      "plan": "Essencial",
+      "monthlyRevenue": 3879,
+      "cancelledMonth": "2025-06",
+      "lastObservedMonth": "2025-05",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 51.2,
+          "average3m": 63.53,
+          "change3m": -34,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 87.5,
+          "slaAverage3m": 59.73,
+          "slaChange3m": 20.8,
+          "openTickets": 8,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 20.8,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 3,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 3879
+        }
+      }
+    },
+    {
+      "subjectId": "C017",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 8666,
+      "cancelledMonth": "2025-06",
+      "lastObservedMonth": "2025-05",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 50.1,
+          "average3m": 64.7,
+          "change3m": -24.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 75,
+          "slaAverage3m": 73.17,
+          "slaChange3m": 19.4,
+          "openTickets": 12,
+          "criticalTickets": 4,
+          "reopenedTickets": 4,
+          "resolutionHours": 39.3,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 5,
+          "monthlyRevenue": 8666
+        }
+      }
+    },
+    {
+      "subjectId": "C020",
+      "segment": "Varejo",
+      "plan": "Avancado",
+      "monthlyRevenue": 12739,
+      "cancelledMonth": "2025-11",
+      "lastObservedMonth": "2025-10",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 82.9,
+          "average3m": 78.27,
+          "change3m": 10.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 54.5,
+          "slaAverage3m": 58.17,
+          "slaChange3m": -45.5,
+          "openTickets": 11,
+          "criticalTickets": 1,
+          "reopenedTickets": 0,
+          "resolutionHours": 19.4,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 12739
+        }
+      }
+    },
+    {
+      "subjectId": "C022",
+      "segment": "Educacao",
+      "plan": "Avancado",
+      "monthlyRevenue": 13161,
+      "cancelledMonth": "2025-05",
+      "lastObservedMonth": "2025-04",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 63,
+          "average3m": 65.93,
+          "change3m": -5.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 69.2,
+          "slaAverage3m": 71.17,
+          "slaChange3m": -12.6,
+          "openTickets": 13,
+          "criticalTickets": 7,
+          "reopenedTickets": 3,
+          "resolutionHours": 36.7,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 3,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 13161
+        }
+      }
+    },
+    {
+      "subjectId": "C024",
+      "segment": "Servicos",
+      "plan": "Essencial",
+      "monthlyRevenue": 3792,
+      "cancelledMonth": "2026-06",
+      "lastObservedMonth": "2026-05",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 38.6,
+          "average3m": 50.47,
+          "change3m": -10.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 50,
+          "slaChange3m": 10,
+          "openTickets": 2,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 30,
+          "formalComplaints": 2
+        },
+        "relationship": {
+          "latestNps": 3,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 13,
+          "monthlyRevenue": 3792
+        }
+      }
+    },
+    {
+      "subjectId": "C025",
+      "segment": "Servicos",
+      "plan": "Enterprise",
+      "monthlyRevenue": 33350,
+      "cancelledMonth": "2026-02",
+      "lastObservedMonth": "2026-01",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 37.8,
+          "average3m": 49.47,
+          "change3m": -15.9,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 34.8,
+          "slaAverage3m": 47.3,
+          "slaChange3m": -22.3,
+          "openTickets": 23,
+          "criticalTickets": 5,
+          "reopenedTickets": 4,
+          "resolutionHours": 35.2,
+          "formalComplaints": 4
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 11,
+          "monthlyRevenue": 33350
+        }
+      }
+    },
+    {
+      "subjectId": "C030",
+      "segment": "Varejo",
+      "plan": "Essencial",
+      "monthlyRevenue": 3404,
+      "cancelledMonth": "2026-01",
+      "lastObservedMonth": "2025-12",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 45.2,
+          "average3m": 62.2,
+          "change3m": -16.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 50,
+          "slaChange3m": 50,
+          "openTickets": 4,
+          "criticalTickets": 1,
+          "reopenedTickets": 2,
+          "resolutionHours": 34.8,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 2,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 0,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 10,
+          "monthlyRevenue": 3404
+        }
+      }
+    },
+    {
+      "subjectId": "C031",
+      "segment": "Servicos",
+      "plan": "Essencial",
+      "monthlyRevenue": 3791,
+      "cancelledMonth": "2026-05",
+      "lastObservedMonth": "2026-04",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 63,
+          "average3m": 60.07,
+          "change3m": 7.4,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 60,
+          "slaAverage3m": 47.77,
+          "slaChange3m": -23.3,
+          "openTickets": 5,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 36,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": null,
+          "npsClassification": "Sem resposta",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 6,
+          "monthlyRevenue": 3791
+        }
+      }
+    },
+    {
+      "subjectId": "C032",
+      "segment": "Logistica",
+      "plan": "Enterprise",
+      "monthlyRevenue": 36208,
+      "cancelledMonth": "2025-09",
+      "lastObservedMonth": "2025-08",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 69.1,
+          "average3m": 67.7,
+          "change3m": 9.5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 66.7,
+          "slaAverage3m": 56.3,
+          "slaChange3m": -4.7,
+          "openTickets": 18,
+          "criticalTickets": 4,
+          "reopenedTickets": 2,
+          "resolutionHours": 42.2,
+          "formalComplaints": 3
+        },
+        "relationship": {
+          "latestNps": 3,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 0,
+          "monthlyRevenue": 36208
+        }
+      }
+    },
+    {
+      "subjectId": "C034",
+      "segment": "Industria",
+      "plan": "Enterprise",
+      "monthlyRevenue": 32070,
+      "cancelledMonth": "2026-04",
+      "lastObservedMonth": "2026-03",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 56,
+          "average3m": 62.33,
+          "change3m": -17,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 46.2,
+          "slaAverage3m": 62.33,
+          "slaChange3m": -41.3,
+          "openTickets": 13,
+          "criticalTickets": 3,
+          "reopenedTickets": 4,
+          "resolutionHours": 32.7,
+          "formalComplaints": 3
+        },
+        "relationship": {
+          "latestNps": 0,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 6,
+          "monthlyRevenue": 32070
+        }
+      }
+    },
+    {
+      "subjectId": "C038",
+      "segment": "Varejo",
+      "plan": "Avancado",
+      "monthlyRevenue": 7399,
+      "cancelledMonth": "2025-10",
+      "lastObservedMonth": "2025-09",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 37.6,
+          "average3m": 55.87,
+          "change3m": -27.6,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 72.7,
+          "slaAverage3m": 70.27,
+          "slaChange3m": 1.3,
+          "openTickets": 11,
+          "criticalTickets": 5,
+          "reopenedTickets": 1,
+          "resolutionHours": 29.8,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 1,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 0,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 3,
+          "monthlyRevenue": 7399
+        }
+      }
+    },
+    {
+      "subjectId": "C041",
+      "segment": "Logistica",
+      "plan": "Avancado",
+      "monthlyRevenue": 11985,
+      "cancelledMonth": "2025-08",
+      "lastObservedMonth": "2025-07",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 51,
+          "average3m": 56.23,
+          "change3m": -0.7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 56.2,
+          "slaAverage3m": 41.6,
+          "slaChange3m": 27.6,
+          "openTickets": 16,
+          "criticalTickets": 1,
+          "reopenedTickets": 4,
+          "resolutionHours": 24.8,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 0,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 8,
+          "monthlyRevenue": 11985
+        }
+      }
+    },
+    {
+      "subjectId": "C043",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 2479,
+      "cancelledMonth": "2025-05",
+      "lastObservedMonth": "2025-04",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 62.3,
+          "average3m": 69.73,
+          "change3m": -13.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 83.3,
+          "slaAverage3m": 77.77,
+          "slaChange3m": -16.7,
+          "openTickets": 6,
+          "criticalTickets": 3,
+          "reopenedTickets": 2,
+          "resolutionHours": 29.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 4,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 2,
+          "monthlyRevenue": 2479
+        }
+      }
+    },
+    {
+      "subjectId": "C047",
+      "segment": "Servicos",
+      "plan": "Enterprise",
+      "monthlyRevenue": 33196,
+      "cancelledMonth": "2026-06",
+      "lastObservedMonth": "2026-05",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 64,
+          "average3m": 63.33,
+          "change3m": -16.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 71.4,
+          "slaAverage3m": 64.9,
+          "slaChange3m": 2.6,
+          "openTickets": 14,
+          "criticalTickets": 3,
+          "reopenedTickets": 3,
+          "resolutionHours": 32,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 1
+        },
+        "financial": {
+          "paymentDelayDays": 1,
+          "monthlyRevenue": 33196
+        }
+      }
+    },
+    {
+      "subjectId": "C053",
+      "segment": "Educacao",
+      "plan": "Avancado",
+      "monthlyRevenue": 7601,
+      "cancelledMonth": "2026-02",
+      "lastObservedMonth": "2026-01",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 56.9,
+          "average3m": 60.43,
+          "change3m": -5,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 61.5,
+          "slaAverage3m": 50,
+          "slaChange3m": 11.5,
+          "openTickets": 13,
+          "criticalTickets": 5,
+          "reopenedTickets": 2,
+          "resolutionHours": 22.1,
+          "formalComplaints": 1
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 18,
+          "monthlyRevenue": 7601
+        }
+      }
+    },
+    {
+      "subjectId": "C054",
+      "segment": "Saude",
+      "plan": "Essencial",
+      "monthlyRevenue": 3440,
+      "cancelledMonth": "2026-05",
+      "lastObservedMonth": "2026-04",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 43.3,
+          "average3m": 54.27,
+          "change3m": -13,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 44.4,
+          "slaAverage3m": 51.47,
+          "slaChange3m": -15.6,
+          "openTickets": 9,
+          "criticalTickets": 4,
+          "reopenedTickets": 2,
+          "resolutionHours": 31.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 2,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 1,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 8,
+          "monthlyRevenue": 3440
+        }
+      }
+    },
+    {
+      "subjectId": "C073",
+      "segment": "Educacao",
+      "plan": "Essencial",
+      "monthlyRevenue": 3664,
+      "cancelledMonth": "2026-06",
+      "lastObservedMonth": "2026-05",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 50.8,
+          "average3m": 66.67,
+          "change3m": -28.3,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 36.1,
+          "slaChange3m": 16.7,
+          "openTickets": 6,
+          "criticalTickets": 2,
+          "reopenedTickets": 0,
+          "resolutionHours": 21.1,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 2,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 7,
+          "monthlyRevenue": 3664
+        }
+      }
+    },
+    {
+      "subjectId": "C075",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 2680,
+      "cancelledMonth": "2026-03",
+      "lastObservedMonth": "2026-02",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 50.2,
+          "average3m": 54.9,
+          "change3m": -7.8,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 75,
+          "slaAverage3m": 49.43,
+          "slaChange3m": 35,
+          "openTickets": 8,
+          "criticalTickets": 2,
+          "reopenedTickets": 2,
+          "resolutionHours": 41.9,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 2,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 5,
+          "monthlyRevenue": 2680
+        }
+      }
+    },
+    {
+      "subjectId": "C077",
+      "segment": "Industria",
+      "plan": "Essencial",
+      "monthlyRevenue": 2403,
+      "cancelledMonth": "2025-09",
+      "lastObservedMonth": "2025-08",
+      "evidenceBeforeCancellation": {
+        "usage": {
+          "current": 63.1,
+          "average3m": 57.7,
+          "change3m": 1.7,
+          "unit": "%"
+        },
+        "service": {
+          "slaCurrent": 50,
+          "slaAverage3m": 53.2,
+          "slaChange3m": 7.1,
+          "openTickets": 4,
+          "criticalTickets": 0,
+          "reopenedTickets": 0,
+          "resolutionHours": 31.5,
+          "formalComplaints": 0
+        },
+        "relationship": {
+          "latestNps": 5,
+          "npsClassification": "Detrator",
+          "monthsSinceNps": 2,
+          "meetingsPlanned": 1,
+          "meetingsCompleted": 0
+        },
+        "financial": {
+          "paymentDelayDays": 8,
+          "monthlyRevenue": 2403
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "O conjunto possui somente 22 cancelamentos independentes.",
+    "A base permite validação por cliente, não por produto contratado.",
+    "Probabilidades cobrem somente o horizonte de 90 dias.",
+    "Cenários de recuperação continuam sendo simulações, não efeito causal estimado."
+  ]
+}

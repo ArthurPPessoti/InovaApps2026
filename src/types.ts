@@ -63,6 +63,9 @@ export interface SpreadsheetMetadata {
   fileName: string;
   importedAt: string;
   rows: number;
+  sourceName?: string;
+  objective?: "churn-90";
+  mapping?: SpreadsheetMapping;
 }
 
 export interface MockAccount {
@@ -220,3 +223,4 @@ export interface PortfolioHealthPoint {
   target: number;
   event?: string;
 }
+import type { SpreadsheetMapping } from "./churn/types";

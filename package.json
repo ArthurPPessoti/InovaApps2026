@@ -12,10 +12,17 @@
     "test:tracker:real": "node scripts/test-tracker.mjs",
     "seed:telemetry-demo": "node server/telemetry-demo-seed.mjs",
     "demo:start": "node --env-file=demo-app/.env demo-app/server.mjs",
-    "test:demo": "node --test demo-app/actions.test.mjs"
+    "test:demo": "node --test demo-app/actions.test.mjs",
+    "model:train": "python ml/train_churn_model.py --input \"Informacoes_fornecidas/INOVAAPPS_base_de_dados.xlsx\" --output \"public/data/churn-model.json\"",
+    "test:model": "python -m unittest discover -s ml -p \"test_*.py\"",
+    "test:churn-api": "node --test server/churn-api.test.mjs",
+    "test:ai": "node --test server/onboarding-ai.test.mjs",
+    "test:analysis-api": "node --test server/analysis-api.test.mjs",
+    "test:sanitizer": "node --test server/sample-sanitizer.test.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "gsap": "^3.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",

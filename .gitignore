@@ -14,3 +14,13 @@ tmp-chrome-*/
 tmp-edge-*/
 playwright-report/
 test-results/
+
+# Variaveis locais (chaves de API)
+.env
+.env.local
+.env*.local
+
+# Rascunhos locais
+tmp/
+__pycache__/
+*.pyc

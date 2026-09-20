@@ -13,6 +13,13 @@ const demoAccounts: MockAccount[] = [
     segment: "Tecnologia",
     profile: "technology",
     onboardingComplete: true,
+    spreadsheet: {
+      fileName: "INOVAAPPS_base_de_dados.xlsx",
+      importedAt: "19/09/2026 às 09:42",
+      rows: 80,
+      sourceName: "Carteira real · conexões demonstrativas",
+      objective: "churn-90",
+    },
   },
   {
     id: "demo-general",
@@ -23,9 +30,11 @@ const demoAccounts: MockAccount[] = [
     profile: "general",
     onboardingComplete: true,
     spreadsheet: {
-      fileName: "carteira_clientes_2026.xlsx",
+      fileName: "INOVAAPPS_base_de_dados.xlsx",
       importedAt: "19/09/2026 às 09:42",
       rows: 80,
+      sourceName: "Base INOVAAPPS 2026",
+      objective: "churn-90",
     },
   },
 ];
@@ -44,8 +53,8 @@ interface AuthContextValue {
   accounts: MockAccount[];
   login: (email: string) => boolean;
   quickLogin: (profile: CompanyProfile) => void;
-  register: (input: RegisterAccountInput) => void;
-  updateSpreadsheet: (fileName: string) => void;
+  register: (input: RegisterAccountInput) => MockAccount;
+  updateSpreadsheet: (fileName: string, rows?: number, sourceName?: string, mapping?: SpreadsheetMetadata["mapping"]) => void;
   logout: () => void;
 }
 
@@ -64,11 +73,14 @@ export function isSupportedSpreadsheet(fileName: string) {
   return /\.(xlsx|xls|csv)$/i.test(fileName);
 }
 
-export function spreadsheetMetadata(fileName: string): SpreadsheetMetadata {
+export function spreadsheetMetadata(fileName: string, rows = 80, sourceName = "Base de clientes", mapping?: SpreadsheetMetadata["mapping"]): SpreadsheetMetadata {
   return {
     fileName,
     importedAt: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date()),
-    rows: 80,
+    rows,
+    sourceName,
+    objective: "churn-90",
+    mapping,
   };
 }
 
@@ -111,10 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updated = [...accounts.filter((item) => item.email !== next.email), next];
       persistAccounts(updated);
       startSession(next);
+      return next;
     },
-    updateSpreadsheet(fileName) {
+    updateSpreadsheet(fileName, rows, sourceName, mapping) {
       if (!account || !isSupportedSpreadsheet(fileName)) return;
-      const updatedAccount = { ...account, spreadsheet: spreadsheetMetadata(fileName) };
+      const updatedAccount = { ...account, spreadsheet: spreadsheetMetadata(fileName, rows, sourceName, mapping) };
       const updated = accounts.map((item) => item.id === updatedAccount.id ? updatedAccount : item);
       persistAccounts(updated);
       startSession(updatedAccount);
